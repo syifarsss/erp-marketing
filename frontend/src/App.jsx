@@ -3242,7 +3242,7 @@ export default function App() {
                           }}
                         >
                           <Plus size={16} />
-                          <span>+ Tambah Operator</span>
+                          <span>Tambah Operator</span>
                         </button>
                       </div>
 
@@ -3602,7 +3602,7 @@ export default function App() {
                           }}
                         >
                           <Plus size={18} />
-                          <span>+ Buat / Upload Folder Baru</span>
+                          <span>Buat / Upload Folder Baru</span>
                         </button>
                       </div>
 

@@ -212,7 +212,7 @@ export default function App() {
         setAlertBannerDismissed(false);
       }
     } catch (err) {
-      // Silently fail â€” don't block the UI if notification check fails
+      // Silently fail — don't block the UI if notification check fails
       console.warn('Deadline alert check failed:', err.message);
     }
   };
@@ -1556,7 +1556,7 @@ export default function App() {
             </div>
           ) : publicShareError ? (
             <div style={{ padding: '30px 10px', display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
-              <div style={{ fontSize: '48px' }}>âš ï¸</div>
+              <div style={{ fontSize: '48px' }}>⚠�?</div>
               <div>
                 <h4 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--accent-red)' }}>Akses Gagal / Link Kedaluwarsa</h4>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '6px' }}>{publicShareError}</p>
@@ -1577,7 +1577,7 @@ export default function App() {
                 {/* File Icon & Type Banner */}
                 <div style={{ background: headerBg, borderRadius: '12px', padding: '30px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
                   <div style={{ fontSize: '44px' }}>
-                    {a.file_type === 'PDF' ? 'ðŸ“„' : a.file_type === 'Template' ? 'ðŸ“' : a.file_type === 'Image' ? 'ðŸ–¼ï¸' : 'ðŸ“¹'}
+                    {a.file_type === 'PDF' ? <FileText size={36} style={{ color: '#ef4444' }} /> : a.file_type === 'Image' ? <ImageIcon size={36} style={{ color: '#ec4899' }} /> : a.file_type === 'Template' ? <FileSpreadsheet size={36} style={{ color: '#f59e0b' }} /> : <Archive size={36} style={{ color: 'var(--accent-cyan)' }} />}
                   </div>
                   <span style={{ fontSize: '11px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', background: 'rgba(255,255,255,0.2)', color: '#fff' }}>
                     {a.file_type} DOCUMENT
@@ -1636,7 +1636,7 @@ export default function App() {
                 </div>
 
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                  <span>ðŸ›¡ï¸ Verified Secure by MarketERP Share</span>
+                  <span>🛡�? Verified Secure by MarketERP Share</span>
                 </div>
               </div>
             );
@@ -1796,7 +1796,7 @@ export default function App() {
                           {a.name}
                         </h4>
                         <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                          {a.file_type} Dokumen Â· {a.size || '2.4 MB'}
+                          {a.file_type} Dokumen � {a.size || '2.4 MB'}
                         </span>
                       </div>
                     </div>
@@ -1875,7 +1875,7 @@ export default function App() {
                   type="password"
                   className="form-input"
                   style={{ paddingLeft: '38px' }}
-                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                  placeholder="••••••••"
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   required
@@ -2085,12 +2085,12 @@ export default function App() {
             <div className="header-title-container">
               <h1 className="header-title">
                 {currentView === 'dashboard' && 'Analytics & Reporting'}
-                {currentView === 'operator-crm' && (selectedLeadId ? `Detail Client â€¢ ${leadDetail?.lead?.name || ''}` : 'Marketing Operator')}
+                {currentView === 'operator-crm' && (selectedLeadId ? `Detail Client • ${leadDetail?.lead?.name || ''}` : 'Marketing Operator')}
                 {currentView === 'digital-marketing' && 'Marketing Assets'}
-                {currentView === 'follow-up' && (fuSelectedProspect ? `Prospect Detail â€¢ ${fuSelectedProspect?.lead?.name || ''}` : 'Marketing Follow Up')}
+                {currentView === 'follow-up' && (fuSelectedProspect ? `Prospect Detail • ${fuSelectedProspect?.lead?.name || ''}` : 'Marketing Follow Up')}
               </h1>
               <span className="header-subtitle">
-                Sistem ERP Pemasaran Digital Terpadu â€¢ {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                Sistem ERP Pemasaran Digital Terpadu • {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </span>
             </div>
           </div>
@@ -2151,7 +2151,7 @@ export default function App() {
                   </div>
                   <div className="kpi-value">{dashboardData.summary.activeLeads}</div>
                   <div className="kpi-footer">
-                    <span className="kpi-trend-up">â†‘ 12%</span>
+                    <span className="kpi-trend-up">↑ 12%</span>
                     <span style={{ color: 'var(--text-muted)' }}>dari bulan lalu</span>
                   </div>
                 </div>
@@ -2162,7 +2162,7 @@ export default function App() {
                   </div>
                   <div className="kpi-value">{dashboardData.summary.totalWonCount}</div>
                   <div className="kpi-footer">
-                    <span className="kpi-trend-up">â†‘ 8%</span>
+                    <span className="kpi-trend-up">↑ 8%</span>
                     <span style={{ color: 'var(--text-muted)' }}>rasio konversi tinggi</span>
                   </div>
                 </div>
@@ -2186,7 +2186,7 @@ export default function App() {
                     {formatCurrency(dashboardData.summary.revenueWon)}
                   </div>
                   <div className="kpi-footer">
-                    <span className="kpi-trend-up">â†‘ Rp 45jt</span>
+                    <span className="kpi-trend-up">↑ Rp 45jt</span>
                     <span style={{ color: 'var(--text-muted)' }}>bulan ini</span>
                   </div>
                 </div>
@@ -2640,7 +2640,7 @@ export default function App() {
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                               <span style={{ color: '#fff', fontWeight: 600, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {act.action} <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>â€”</span> <span style={{ fontWeight: 600, color: '#e2e8f0' }}>{act.target}</span>
+                                {act.action} <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>—</span> <span style={{ fontWeight: 600, color: '#e2e8f0' }}>{act.target}</span>
                               </span>
                               <span style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '2px' }}>
                                 Status pembaruan interaksi prospek
@@ -3543,7 +3543,7 @@ export default function App() {
                                 >
                                   <Edit3 size={12} />
                                 </button>
-                                <button className="icon-btn" style={{ color: 'var(--accent-red)' }} onClick={() => deleteAsset(a.id)} title="Hapus">âœ•</button>
+                                <button className="icon-btn" style={{ color: 'var(--accent-red)' }} onClick={() => deleteAsset(a.id)} title="Hapus">✕</button>
                               </div>
                             </div>
 
@@ -3553,14 +3553,14 @@ export default function App() {
                                 width: '40px', height: '40px', borderRadius: '8px', background: cfg.bg,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', color: '#fff', flexShrink: 0
                               }}>
-                                {a.file_type === 'PDF' ? 'ðŸ“„' : a.file_type === 'Template' ? 'ðŸ“' : a.file_type === 'Image' ? 'ðŸ–¼ï¸' : 'ðŸ“¹'}
+                                {a.file_type === 'PDF' ? <FileText size={20} style={{ color: '#fff' }} /> : a.file_type === 'Image' ? <ImageIcon size={20} style={{ color: '#fff' }} /> : a.file_type === 'Template' ? <FileSpreadsheet size={20} style={{ color: '#fff' }} /> : <Archive size={20} style={{ color: '#fff' }} />}
                               </div>
                               <div style={{ minWidth: 0 }}>
                                 <h4 style={{ fontSize: '14px', fontWeight: 700, lineHeight: 1.4, margin: 0, wordBreak: 'break-word' }}>
                                   {a.name}
                                 </h4>
                                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                                  {a.size || '2.4 MB'} Â· {a.file_type}
+                                  {a.size || '2.4 MB'} � {a.file_type}
                                 </div>
                               </div>
                             </div>
@@ -3770,7 +3770,7 @@ export default function App() {
                           style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '8px 14px', borderRadius: '8px' }}
                           onClick={() => setSelectedFolder(null)}
                         >
-                          <span>â† Kembali ke Semua Folder</span>
+                          <span>�? Kembali ke Semua Folder</span>
                         </button>
                         <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
                           Perpustakaan Aset / <strong style={{ color: 'var(--text-primary)' }}>{selectedFolder.name}</strong>
@@ -3882,7 +3882,7 @@ export default function App() {
                               >
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                   <span style={{ fontSize: '24px' }}>
-                                    {a.file_type === 'PDF' ? 'ðŸ“„' : a.file_type === 'Image' ? 'ðŸ–¼ï¸' : a.file_type === 'Template' ? 'ðŸ“Š' : 'ðŸ“'}
+                                    {a.file_type === 'PDF' ? <FileText size={22} style={{ color: '#ef4444' }} /> : a.file_type === 'Image' ? <ImageIcon size={22} style={{ color: '#ec4899' }} /> : a.file_type === 'Template' ? <FileSpreadsheet size={22} style={{ color: '#f59e0b' }} /> : <Archive size={22} style={{ color: 'var(--accent-cyan)' }} />}
                                   </span>
                                   <span className="badge" style={{ background: 'rgba(6,182,212,0.15)', color: 'var(--accent-cyan)', fontSize: '10px' }}>
                                     v{a.version || '1.0'}
@@ -3894,7 +3894,7 @@ export default function App() {
                                     {a.name}
                                   </div>
                                   <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                                    Tipe: {a.file_type} Â· Ukuran: {a.size || '2.4 MB'}
+                                    Tipe: {a.file_type} � Ukuran: {a.size || '2.4 MB'}
                                   </div>
                                 </div>
 
@@ -3982,7 +3982,7 @@ export default function App() {
                     <Bell size={16} style={{ color: '#f59e0b', flexShrink: 0 }} />
                     <div>
                       <span style={{ fontWeight: 700, fontSize: '13px', color: '#f59e0b' }}>
-                        âš ï¸ {deadlineAlerts.length} Prospek Deadline Mendekati
+                        ⚠�? {deadlineAlerts.length} Prospek Deadline Mendekati
                       </span>
                       <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
                         {deadlineAlerts.map(a => {
@@ -3999,7 +3999,7 @@ export default function App() {
                     </div>
                   </div>
                   <button onClick={() => setAlertBannerDismissed(true)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '18px', lineHeight: 1, padding: '0 4px' }}>Ã—</button>
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '18px', lineHeight: 1, padding: '0 4px' }}>×</button>
                 </div>
               )}
 
@@ -4374,7 +4374,7 @@ export default function App() {
                                           </div>
                                         )}
 
-                                        {/* Terakhir Kontak box â€” shown only if last_contact exists */}
+                                        {/* Terakhir Kontak box — shown only if last_contact exists */}
                                         {lead.last_contact && (
                                           <div style={{ marginTop: '8px', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '6px', padding: '7px 10px' }}>
                                             <div style={{ fontSize: '10px', fontWeight: 700, color: '#f59e0b', letterSpacing: '0.5px', marginBottom: '3px' }}>Terakhir Kontak</div>
@@ -4382,7 +4382,7 @@ export default function App() {
                                               {lead.last_contact_phone && <span>{lead.last_contact_phone}</span>}
                                             </div>
                                             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                                              {lead.last_contact_name && <span>{lead.last_contact_name} Â· </span>}
+                                              {lead.last_contact_name && <span>{lead.last_contact_name} � </span>}
                                               {new Date(lead.last_contact).toISOString().split('T')[0]}
                                             </div>
                                           </div>
@@ -4498,7 +4498,7 @@ export default function App() {
                                   onClick={e => { e.stopPropagation(); deleteSocialPost(p.id); }}
                                   style={{ background: 'rgba(0,0,0,0.25)', border: 'none', color: '#fff', borderRadius: '6px', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}
                                   title="Hapus"
-                                >âœ•</button>
+                                >✕</button>
                               </div>
                             </div>
 
@@ -4530,10 +4530,10 @@ export default function App() {
 
                               {/* Engagement stats */}
                               <div style={{ display: 'flex', gap: '12px', paddingTop: '10px', borderTop: '1px solid var(--border-color)', fontSize: '11px', color: 'var(--text-secondary)' }}>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>â¤ï¸ {p.engagement_likes || 0}</span>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>ðŸ’¬ {p.engagement_comments || 0}</span>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>ðŸ” {p.engagement_shares || 0}</span>
-                                <span style={{ marginLeft: 'auto', color: cfg.color, fontWeight: 600, fontSize: '10px' }}>Klik untuk detail â†’</span>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>? {p.engagement_likes || 0}</span>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>💬 {p.engagement_comments || 0}</span>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>�? {p.engagement_shares || 0}</span>
+                                <span style={{ marginLeft: 'auto', color: cfg.color, fontWeight: 600, fontSize: '10px' }}>Klik untuk detail →</span>
                               </div>
                             </div>
                           </div>
@@ -4887,9 +4887,9 @@ export default function App() {
                 {/* Engagement stats */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px' }}>
                   {[
-                    { label: 'Likes', value: p.engagement_likes || 0, icon: 'â¤ï¸', color: '#ef4444' },
-                    { label: 'Comments', value: p.engagement_comments || 0, icon: 'ðŸ’¬', color: '#3b82f6' },
-                    { label: 'Shares', value: p.engagement_shares || 0, icon: 'ðŸ”', color: '#10b981' },
+                    { label: 'Likes', value: p.engagement_likes || 0, icon: '?', color: '#ef4444' },
+                    { label: 'Comments', value: p.engagement_comments || 0, icon: '💬', color: '#3b82f6' },
+                    { label: 'Shares', value: p.engagement_shares || 0, icon: '�?', color: '#10b981' },
                   ].map(stat => (
                     <div key={stat.label} style={{ textAlign: 'center', padding: '12px', background: `${stat.color}10`, border: `1px solid ${stat.color}25`, borderRadius: '10px' }}>
                       <div style={{ fontSize: '20px', marginBottom: '4px' }}>{stat.icon}</div>
@@ -5026,7 +5026,7 @@ export default function App() {
                     </div>
                     {folderFormData.files.map((file, idx) => (
                       <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: '6px', fontSize: '12px' }}>
-                        <span>ðŸ“„ {file.name}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><FileText size={14} style={{ color: '#ef4444', flexShrink: 0 }} />{file.name}</span>
                         <span style={{ color: 'var(--text-muted)' }}>{file.size}</span>
                       </div>
                     ))}
@@ -5054,7 +5054,7 @@ export default function App() {
             <div className="modal-header" style={{ background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)', margin: '-1px -1px 0', padding: '16px 24px', borderRadius: '14px 14px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ fontSize: '22px' }}>
-                  {previewFileModal.fileType === 'PDF' ? 'ðŸ“„' : previewFileModal.fileType === 'Image' ? 'ðŸ–¼ï¸' : previewFileModal.fileType === 'Video' ? 'ðŸŽ¬' : 'ðŸ“‘'}
+                  {previewFileModal.fileType === 'PDF' ? <FileText size={22} style={{ color: '#ef4444' }} /> : previewFileModal.fileType === 'Image' ? <ImageIcon size={22} style={{ color: '#ec4899' }} /> : previewFileModal.fileType === 'Video' ? <Archive size={22} style={{ color: '#3b82f6' }} /> : <FileSpreadsheet size={22} style={{ color: '#f59e0b' }} />}
                 </span>
                 <div>
                   <h3 className="modal-title" style={{ color: 'black', fontWeight: 800, margin: 0, fontSize: '16px' }}>
@@ -5105,7 +5105,7 @@ export default function App() {
                 />
               ) : (
                 <div style={{ textAlign: 'center', padding: '40px 20px', maxWidth: '500px' }}>
-                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>ðŸ“‘</div>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>📑</div>
                   <h4 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
                     Preview Langsung Tidak Didukung Browser untuk Format Dokumen Ini
                   </h4>
@@ -5182,7 +5182,7 @@ export default function App() {
               </div>
 
               <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.5' }}>
-                ðŸ’¡ <strong>Manfaat bagi Klien:</strong> Klien langsung disambut halaman portal eksklusif berisi <strong>{shareFolderModal.item_count || shareFolderModal.assets?.length || 0} file pemasaran</strong>, dilengkapi pencarian instan agar gampang menemukan dan mengunduh brosur/dokumen yang diinginkan.
+                💡 <strong>Manfaat bagi Klien:</strong> Klien langsung disambut halaman portal eksklusif berisi <strong>{shareFolderModal.item_count || shareFolderModal.assets?.length || 0} file pemasaran</strong>, dilengkapi pencarian instan agar gampang menemukan dan mengunduh brosur/dokumen yang diinginkan.
               </div>
 
               <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
@@ -5342,14 +5342,14 @@ export default function App() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ width: '46px', height: '46px', borderRadius: '12px', background: 'rgba(6,182,212,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
-                          {a.file_type === 'PDF' ? 'ðŸ“„' : a.file_type === 'Image' ? 'ðŸ–¼ï¸' : a.file_type === 'Template' ? 'ðŸ“Š' : 'ðŸ“'}
+                          {a.file_type === 'PDF' ? <FileText size={22} style={{ color: '#ef4444' }} /> : a.file_type === 'Image' ? <ImageIcon size={22} style={{ color: '#ec4899' }} /> : a.file_type === 'Template' ? <FileSpreadsheet size={22} style={{ color: '#f59e0b' }} /> : <Archive size={22} style={{ color: 'var(--accent-cyan)' }} />}
                         </div>
                         <div>
                           <h4 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                             {a.name}
                           </h4>
                           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                            {a.file_type} Dokumen Â· {a.size || '2.4 MB'}
+                            {a.file_type} Dokumen � {a.size || '2.4 MB'}
                           </span>
                         </div>
                       </div>
@@ -5508,20 +5508,20 @@ export default function App() {
                   />
                   {assetFormData.file_url ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '24px' }}>
-                        {assetFormData.file_type === 'PDF' && 'ðŸ“„'}
-                        {assetFormData.file_type === 'Image' && 'ðŸ–¼ï¸'}
-                        {assetFormData.file_type === 'Template' && 'ðŸ“Š'}
-                        {assetFormData.file_type === 'Video' && 'ðŸŽ¬'}
+
+                      <span style={{ fontSize: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {assetFormData.file_type === 'PDF' ? <FileText size={24} style={{ color: '#ef4444' }} /> : assetFormData.file_type === 'Image' ? <ImageIcon size={24} style={{ color: '#ec4899' }} /> : assetFormData.file_type === 'Template' ? <FileSpreadsheet size={24} style={{ color: '#f59e0b' }} /> : <Archive size={24} style={{ color: 'var(--accent-cyan)' }} />}
                       </span>
+
+
                       <div style={{ fontSize: '13px', fontWeight: 600, color: 'white' }}>
                         File Berhasil Dikumpulkan
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                        Ukuran: {assetFormData.size} Â· Tipe: {assetFormData.file_type}
+                        Ukuran: {assetFormData.size} � Tipe: {assetFormData.file_type}
                       </div>
                       {assetFormData.file_url.startsWith('data:') && (
-                        <span style={{ fontSize: '10px', color: 'var(--accent-green)', fontWeight: 600 }}>âœ“ File terkompresi Base64</span>
+                        <span style={{ fontSize: '10px', color: 'var(--accent-green)', fontWeight: 600 }}>✓ File terkompresi Base64</span>
                       )}
                     </div>
                   ) : (
@@ -5636,11 +5636,11 @@ export default function App() {
                         style={{ padding: '4px 10px', fontSize: '11px', height: 'auto', background: 'rgba(6,182,212,0.18)', color: 'var(--accent-cyan)', border: '1px solid rgba(6,182,212,0.3)', borderRadius: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}
                         onClick={() => handleOpenOrDownloadFile(selectedAssetHistory.file_url, selectedAssetHistory.name || 'Dokumen')}
                       >
-                        ðŸ“¥ Unduh File Aktif
+                        📥 Unduh File Aktif
                       </button>
                     </div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                      Ukuran: {selectedAssetHistory.size || '1.5 MB'} Â· Rilis: {new Date(selectedAssetHistory.created_at).toLocaleDateString('id-ID')}
+                      Ukuran: {selectedAssetHistory.size || '1.5 MB'} � Rilis: {new Date(selectedAssetHistory.created_at).toLocaleDateString('id-ID')}
                     </div>
                   </div>
 
@@ -5655,11 +5655,11 @@ export default function App() {
                           style={{ padding: '4px 10px', fontSize: '11px', height: 'auto', background: 'rgba(255,255,255,0.08)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '6px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}
                           onClick={() => handleOpenOrDownloadFile(hist.file_url, `${selectedAssetHistory.name || 'Dokumen'}_v${hist.version}`)}
                         >
-                          ðŸ“¥ Unduh Versi Lama
+                          📥 Unduh Versi Lama
                         </button>
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                        Ukuran: {hist.size || '1.5 MB'} Â· Diupload: {new Date(hist.uploaded_at).toLocaleDateString('id-ID')}
+                        Ukuran: {hist.size || '1.5 MB'} � Diupload: {new Date(hist.uploaded_at).toLocaleDateString('id-ID')}
                       </div>
                     </div>
                   ))}
@@ -5668,7 +5668,7 @@ export default function App() {
                 {/* Version control upgrade form */}
                 <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '14px', marginTop: '10px' }}>
                   <h4 style={{ fontSize: '12px', fontWeight: 700, marginBottom: '10px', color: 'var(--text-primary)' }}>
-                    ðŸš€ Upload Versi Baru (Version Control)
+                    🚀 Upload Versi Baru (Version Control)
                   </h4>
 
                   {/* File Upload Drag & Drop inside Version Control modal */}
@@ -5707,7 +5707,7 @@ export default function App() {
                     />
                     {newVersionFileUrl ? (
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ fontSize: '20px' }}>ðŸ“„</span>
+                        <span style={{ fontSize: '20px' }}>📄</span>
                         <div style={{ fontSize: '12px', fontWeight: 600, color: 'white' }}>
                           File Baru Siap Diunggah
                         </div>
@@ -5788,7 +5788,7 @@ export default function App() {
             <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '10px', padding: '14px' }}>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '20px' }}>ðŸŸ¢</span>
+                  <span style={{ fontSize: '20px' }}>🟢</span>
                   <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent-green)' }}>Tautan Aktif & Siap Dibagikan</span>
                 </div>
                 <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
@@ -6311,7 +6311,7 @@ export default function App() {
           <div className="modal-content">
             <div className="modal-header">
               <h3 className="modal-title">
-                {fuEditForm.id ? `Edit Prospek â€” ${fuEditForm.name}` : 'Edit Prospek â€” Baru'}
+                {fuEditForm.id ? `Edit Prospek — ${fuEditForm.name}` : 'Edit Prospek — Baru'}
               </h3>
               <button className="icon-btn" onClick={() => setFuEditModalOpen(false)}>
                 <XCircle size={20} />
@@ -6499,7 +6499,7 @@ export default function App() {
                 />
               </div>
 
-              {/* Tambah Riwayat Kontak â€” only for existing prospects */}
+              {/* Tambah Riwayat Kontak — only for existing prospects */}
               {fuEditForm.id && (
                 <div className="form-group">
                   <label className="form-label">Tambah Riwayat Kontak</label>

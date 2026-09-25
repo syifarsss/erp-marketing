@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { initializeDatabase } = require('./config/db');
@@ -33,6 +33,7 @@ app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/seo', require('./routes/seo'));
 app.use('/api/gsc', require('./routes/gsc'));
 app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/notes', require('./routes/notes'));
 
 // Base route status
 app.get('/api/status', (req, res) => {
@@ -99,20 +100,21 @@ async function startServer() {
     await initializeDatabase();
     dbInitialized = true;
   } catch (err) {
-    console.error('⚠️ Database initialization failed on startup:', err.message);
+    console.error('âš ï¸ Database initialization failed on startup:', err.message);
     console.error('The server will start anyway, but database queries might fail until connection issues are resolved.');
   }
 
   app.listen(PORT, () => {
     console.log(`=========================================`);
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`ðŸš€ Server running on http://localhost:${PORT}`);
     if (dbInitialized) {
-      console.log(`✓ Database initialized successfully.`);
+      console.log(`âœ“ Database initialized successfully.`);
     } else {
-      console.log(`⚠️ Database is OFFLINE. The app will retry connection on demand.`);
+      console.log(`âš ï¸ Database is OFFLINE. The app will retry connection on demand.`);
     }
     console.log(`=========================================`);
   });
 }
 
 startServer();
+

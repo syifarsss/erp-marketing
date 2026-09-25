@@ -1,0 +1,20 @@
+Error upserting admin/superadmin: Error: Cannot add or update a child row: a foreign key constraint fails (`u533684840_erpinfimech`.`User`, CONSTRAINT `User_roleId_fkey` FOREIGN KEY (`roleId`) REFERENCES `Role` (`id`) ON UPDATE CASCADE)
+    at initializeDatabase (C:\marketing\infimech-erp-marketing\backend\config\db.js:295:20)
+    at async startServer (C:\marketing\infimech-erp-marketing\backend\server.js:100:5) {
+  code: 'ER_NO_REFERENCED_ROW_2',
+  errno: 1452,
+  sqlState: '23000',
+  sqlMessage: 'Cannot add or update a child row: a foreign key constraint fails (`u533684840_erpinfimech`.`User`, CONSTRAINT `User_roleId_fkey` FOREIGN KEY (`roleId`) REFERENCES `Role` (`id`) ON UPDATE CASCADE)',
+  sql: "INSERT INTO User (username, name, email, password, roleId, is_approved, createdAt, updatedAt) VALUES ('admin_dot', 'Super Admin', 'admin.@gmail.com', '$2a$10$MSiBDW974FEA7A0SNGGFwubBBQyuokQCjA7QeWBYCYq2PiWhHOZEG', 1, 1, NOW(3), NOW(3))"
+}
+Express Error Handler: SyntaxError: Expected property name or '}' in JSON at position 1
+    at JSON.parse (<anonymous>)
+    at parse (C:\marketing\infimech-erp-marketing\backend\node_modules\body-parser\lib\types\json.js:92:19)
+    at C:\marketing\infimech-erp-marketing\backend\node_modules\body-parser\lib\read.js:128:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:206:9)
+    at invokeCallback (C:\marketing\infimech-erp-marketing\backend\node_modules\raw-body\index.js:238:16)
+    at done (C:\marketing\infimech-erp-marketing\backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (C:\marketing\infimech-erp-marketing\backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:524:28)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)

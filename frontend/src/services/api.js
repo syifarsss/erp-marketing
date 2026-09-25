@@ -1,4 +1,4 @@
-export const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+﻿export const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:5000/api'
   : 'https://infimech-marketing-erp-backend-583320051925.asia-southeast1.run.app/api';
 
@@ -495,6 +495,43 @@ export const api = {
 
   getRealtimeStats: async () => {
     const res = await fetch(`${API_BASE_URL}/analytics/realtime-stats`, {
+      headers: getHeaders()
+    });
+    return handleResponse(res);
+  },
+
+  // Notes (Catatan)
+  getNotes: async (search = '', category = '') => {
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (category && category !== 'Semua') params.append('category', category);
+    const res = await fetch(`${API_BASE_URL}/notes?${params.toString()}`, {
+      headers: getHeaders()
+    });
+    return handleResponse(res);
+  },
+
+  createNote: async (data) => {
+    const res = await fetch(`${API_BASE_URL}/notes`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    });
+    return handleResponse(res);
+  },
+
+  updateNote: async (id, data) => {
+    const res = await fetch(`${API_BASE_URL}/notes/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    });
+    return handleResponse(res);
+  },
+
+  deleteNote: async (id) => {
+    const res = await fetch(`${API_BASE_URL}/notes/${id}`, {
+      method: 'DELETE',
       headers: getHeaders()
     });
     return handleResponse(res);

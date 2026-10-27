@@ -89,6 +89,9 @@ export default function App() {
   // Filtering states
   const [leadsFilterStatus, setLeadsFilterStatus] = useState('');
   const [leadsFilterIndustry, setLeadsFilterIndustry] = useState('');
+  const [segmentIndustryFilter, setSegmentIndustryFilter] = useState('');
+  const [industryManageOpen, setIndustryManageOpen] = useState(false);
+  const [newIndustryInput, setNewIndustryInput] = useState('');
   const [leadsFilterSource, setLeadsFilterSource] = useState('');
   const [leadsMeta, setLeadsMeta] = useState({ industries: [], sources: [] });
 
@@ -226,7 +229,6 @@ export default function App() {
         break;
       case 'operator-crm':
         fetchLeads();
-        fetchSegments();
         fetchLeadsMeta();
         fetchFollowUpOperators();
         if (selectedLeadId) {
@@ -398,6 +400,7 @@ export default function App() {
       fetchNotes();
     }
   }, [notesSearch, notesCategoryFilter, currentView, token]);
+
 
   // Load public asset or shared folder on direct load
   useEffect(() => {
@@ -1536,7 +1539,7 @@ export default function App() {
   };
 
   const channels = ['Facebook Ads', 'Google Ads', 'TikTok Ads', 'Instagram Ads', 'LinkedIn Ads', 'Email Marketing', 'Organic Content'];
-  const industriesList = ['Technology', 'E-commerce', 'Tourism', 'Finance', 'F&B', 'Education', 'FMCG', 'Energy', 'Other'];
+  const [industriesList, setIndustriesList] = useState(['Technology', 'E-commerce', 'Tourism', 'Finance', 'F&B', 'Education', 'FMCG', 'Energy', 'Oil & Gas', 'Petrochemical', 'Power and Energy', 'Construction', 'Other']);
   const sourcesList = ['Google Ads', 'Facebook Ads', 'TikTok Ads', 'Instagram Ads', 'LinkedIn Ads', 'Referral', 'Organic', 'Website', 'Event', 'Direct'];
 
   // 1. SECURE PUBLIC SHARING LANDING PAGE (NO LOGIN REQUIRED)
@@ -2848,7 +2851,7 @@ export default function App() {
                                   id: leadDetail.lead.id,
                                   name: leadDetail.lead.name,
                                   company: leadDetail.lead.company,
-                                  industry: leadDetail.lead.industry,
+                                  industry: industriesList.includes(leadDetail.lead.industry) ? leadDetail.lead.industry : 'Technology',
                                   source: leadDetail.lead.source,
                                   value: leadDetail.lead.value,
                                   lead_score: leadDetail.lead.lead_score,
@@ -3195,106 +3198,191 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* TAB 2: Customer Segmentation */}
+                  {/* TAB 2: Customer Segmentation by Industry */}
                   {operatorTab === 'segments' && (
                     <>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                      {/* Header */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                         <div>
                           <h3 style={{ fontSize: '18px', fontWeight: 700 }}>Customer Segmentation</h3>
-                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Segmentasi dinamis berdasarkan kriteria CRM</span>
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                            Hanya tampil industri yang memiliki leads — {leads.length} total leads
+                          </span>
                         </div>
+                        {['Superadmin', 'Admin'].includes(user?.role) && (
+                          <button
+                            className="btn btn-secondary"
+                            style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                            onClick={() => setIndustryManageOpen(!industryManageOpen)}
+                          >
+                            <Edit3 size={14} />
+                            <span>Kelola Daftar Industri</span>
+                          </button>
+                        )}
                       </div>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        {segments.map((seg, idx) => {
-                          const isExpanded = expandedSegmentId === seg.id;
-                          let matchedLeads = [];
-                          if (seg.id === 'high-score') {
-                            matchedLeads = leads.filter(l => l.lead_score >= 80);
-                          } else if (seg.id === 'enterprise-tier') {
-                            matchedLeads = leads.filter(l => parseFloat(l.value) >= 200000000);
-                          } else if (seg.id === 'digital-ads') {
-                            matchedLeads = leads.filter(l => ['Google Ads', 'Facebook Ads', 'TikTok Ads', 'Instagram Ads'].includes(l.source));
-                          } else if (seg.id === 'pt-accounts') {
-                            matchedLeads = leads.filter(l => (l.company || '').toUpperCase().includes('PT') || (l.name || '').toUpperCase().includes('PT'));
-                          } else if (seg.id === 'proposal-stage') {
-                            matchedLeads = leads.filter(l => l.status === 'Proposal');
-                          } else {
-                            matchedLeads = leads.filter(l => !l.last_contact || (new Date() - new Date(l.last_contact) > 7 * 24 * 60 * 60 * 1000));
+                      {/* Manage Industries Panel */}
+                      {industryManageOpen && (
+                        <div className="glass-panel" style={{ padding: '20px', marginBottom: '20px', border: '1px solid rgba(6,182,212,0.3)', background: 'rgba(6,182,212,0.05)' }}>
+                          <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '14px', color: 'var(--accent-cyan)' }}>Kelola Daftar Industri</h4>
+
+                          {/* Add new industry */}
+                          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                            <input
+                              type="text"
+                              className="form-input"
+                              placeholder="Nama industri baru..."
+                              value={newIndustryInput}
+                              onChange={e => setNewIndustryInput(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter' && newIndustryInput.trim()) {
+                                  const val = newIndustryInput.trim();
+                                  if (!industriesList.includes(val)) {
+                                    const withoutOther = industriesList.filter(i => i !== 'Other');
+                                    setIndustriesList([...withoutOther, val, 'Other']);
+                                  }
+                                  setNewIndustryInput('');
+                                }
+                              }}
+                              style={{ flex: 1, height: '36px', fontSize: '13px' }}
+                            />
+                            <button
+                              className="btn btn-primary"
+                              style={{ height: '36px', fontSize: '12px', whiteSpace: 'nowrap' }}
+                              onClick={() => {
+                                const val = newIndustryInput.trim();
+                                if (val && !industriesList.includes(val)) {
+                                  const withoutOther = industriesList.filter(i => i !== 'Other');
+                                  setIndustriesList([...withoutOther, val, 'Other']);
+                                }
+                                setNewIndustryInput('');
+                              }}
+                            >
+                              + Tambah
+                            </button>
+                          </div>
+
+                          {/* List all industries with delete */}
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                            {industriesList.map((ind) => (
+                              <div key={ind} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', borderRadius: '20px', padding: '4px 12px', fontSize: '13px' }}>
+                                <span>{ind}</span>
+                                {ind !== 'Other' && (
+                                  <button
+                                    onClick={() => {
+                                      showConfirm(`Hapus industri "${ind}"? Leads yang sudah pakai industri ini tidak terpengaruh.`, () => {
+                                        setIndustriesList(industriesList.filter(i => i !== ind));
+                                      });
+                                    }}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-red)', display: 'flex', alignItems: 'center', padding: '0', lineHeight: 1 }}
+                                  >
+                                    <X size={13} />
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Segment Cards — only show industries that have leads */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        {(() => {
+                          const colors = ['#06b6d4','#a855f7','#f59e0b','#10b981','#ef4444','#3b82f6','#ec4899','#14b8a6','#f97316','#8b5cf6','#22d3ee','#84cc16','#6b7280'];
+                          const activeIndustries = industriesList.filter(industry => leads.filter(l => l.industry === industry).length > 0);
+
+                          if (activeIndustries.length === 0) {
+                            return (
+                              <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                                Belum ada leads terdaftar. Tambahkan leads terlebih dahulu.
+                              </div>
+                            );
                           }
 
-                          return (
-                            <div
-                              key={idx}
-                              className="glass-panel"
-                              style={{
-                                cursor: 'pointer',
-                                borderLeft: `4px solid ${seg.color}`,
-                                padding: '20px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '12px'
-                              }}
-                              onClick={() => setExpandedSegmentId(isExpanded ? null : seg.id)}
-                            >
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <div>
-                                  <h4 style={{ fontSize: '16px', fontWeight: 700 }}>{seg.title}</h4>
-                                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Kriteria: {seg.criteria}</span>
-                                </div>
-                                <span className="badge" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: seg.color }}>
-                                  {matchedLeads.length} leads
-                                </span>
-                              </div>
+                          return activeIndustries.map((industry, idx) => {
+                            const isExpanded = expandedSegmentId === industry;
+                            const industryLeads = leads.filter(l => l.industry === industry);
+                            const color = colors[industriesList.indexOf(industry) % colors.length];
 
-                              {isExpanded && (
-                                <div style={{ marginTop: '10px', borderTop: '1px solid var(--border-color)', paddingTop: '15px' }} onClick={(e) => e.stopPropagation()}>
-                                  <div className="table-container">
-                                    <table className="custom-table" style={{ background: 'rgba(0,0,0,0.1)' }}>
-                                      <thead>
-                                        <tr>
-                                          <th>Logo</th>
-                                          <th>Client Name</th>
-                                          <th>Perusahaan</th>
-                                          <th>Industry</th>
-                                          <th>Lead Score</th>
-                                          <th>Value</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {matchedLeads.map((ml, mlIdx) => (
-                                          <tr key={mlIdx} style={{ cursor: 'pointer' }} onClick={() => fetchLeadDetails(ml.id)}>
-                                            <td>
-                                              <Building size={14} />
-                                            </td>
-                                            <td style={{ fontWeight: 600 }}>{ml.name}</td>
-                                            <td>{ml.company || '-'}</td>
-                                            <td>{ml.industry}</td>
-                                            <td>{ml.lead_score}/100</td>
-                                            <td>{formatCurrency(ml.value)}</td>
-                                          </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
+                            return (
+                              <div
+                                key={industry}
+                                className="glass-panel"
+                                style={{ cursor: 'pointer', borderLeft: `4px solid ${color}`, padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}
+                                onClick={() => setExpandedSegmentId(isExpanded ? null : industry)}
+                              >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                  <div>
+                                    <h4 style={{ fontSize: '16px', fontWeight: 700 }}>{industry}</h4>
+                                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Leads industri {industry}</span>
                                   </div>
-                                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: '15px' }}>
-                                    <button
-                                      className="btn btn-primary"
-                                      onClick={() => alert(`Mengirim pesan blast ke segment [${seg.title}]...`)}
-                                    >
-                                      <Send size={14} style={{ marginRight: '6px' }} />
-                                      <span>Kirim Pesan ke Segment Ini</span>
-                                    </button>
-                                  </div>
+                                  <span className="badge" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color }}>
+                                    {industryLeads.length} leads
+                                  </span>
                                 </div>
-                              )}
-                            </div>
-                          );
-                        })}
+
+                                {isExpanded && (
+                                  <div style={{ marginTop: '10px', borderTop: '1px solid var(--border-color)', paddingTop: '15px' }} onClick={(e) => e.stopPropagation()}>
+                                    <div className="table-container">
+                                      <table className="custom-table" style={{ background: 'rgba(0,0,0,0.1)' }}>
+                                        <thead>
+                                          <tr>
+                                            <th>Logo</th>
+                                            <th>Perusahaan</th>
+                                            <th>Source</th>
+                                            <th>Status</th>
+                                            <th>Last Contact</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {industryLeads.map((ml, mlIdx) => (
+                                            <tr key={mlIdx} style={{ cursor: 'pointer' }} onClick={() => fetchLeadDetails(ml.id)}>
+                                              <td>
+                                                <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                                  {ml.logo_url ? (
+                                                    <img src={ml.logo_url} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                                  ) : (
+                                                    <Building size={14} style={{ color: 'var(--text-muted)' }} />
+                                                  )}
+                                                </div>
+                                              </td>
+                                              <td style={{ fontWeight: 600 }}>{ml.company || ml.name || '-'}</td>
+                                              <td>{ml.source || '-'}</td>
+                                              <td>
+                                                <span style={{
+                                                  fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '4px',
+                                                  background: ml.status === 'Won' || ml.status === 'Done' ? 'rgba(16,185,129,0.15)' : ml.status === 'Proposal' ? 'rgba(168,85,247,0.15)' : 'rgba(59,130,246,0.15)',
+                                                  color: ml.status === 'Won' || ml.status === 'Done' ? 'var(--accent-green)' : ml.status === 'Proposal' ? '#a855f7' : 'var(--accent-cyan)'
+                                                }}>
+                                                  {ml.status || 'Lead'}
+                                                </span>
+                                              </td>
+                                              <td style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                                                {ml.last_contact ? new Date(ml.last_contact).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
+                                              </td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '15px' }}>
+                                      <button
+                                        className="btn btn-primary"
+                                        onClick={() => alert(`Mengirim pesan blast ke segment industri [${industry}]...`)}
+                                      >
+                                        <Send size={14} style={{ marginRight: '6px' }} />
+                                        <span>Kirim Pesan ke Segment {industry}</span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          });
+                        })()}
                       </div>
                     </>
                   )}
-
                   {/* TAB 3: Operators Role Directory */}
                   {operatorTab === 'roles' && (
                     <div className="glass-panel" style={{ background: 'rgba(15, 23, 42, 0.4)' }}>

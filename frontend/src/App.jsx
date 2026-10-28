@@ -3201,12 +3201,11 @@ export default function App() {
                   {/* TAB 2: Customer Segmentation by Industry */}
                   {operatorTab === 'segments' && (
                     <>
-                      {/* Header */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
                         <div>
                           <h3 style={{ fontSize: '18px', fontWeight: 700 }}>Customer Segmentation</h3>
                           <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                            Hanya tampil industri yang memiliki leads — {leads.length} total leads
+                            Dikelompokkan otomatis berdasarkan industri lead — {leads.length} total leads
                           </span>
                         </div>
                         {['Superadmin', 'Admin'].includes(user?.role) && (
@@ -3225,8 +3224,6 @@ export default function App() {
                       {industryManageOpen && (
                         <div className="glass-panel" style={{ padding: '20px', marginBottom: '20px', border: '1px solid rgba(6,182,212,0.3)', background: 'rgba(6,182,212,0.05)' }}>
                           <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '14px', color: 'var(--accent-cyan)' }}>Kelola Daftar Industri</h4>
-
-                          {/* Add new industry */}
                           <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
                             <input
                               type="text"
@@ -3257,27 +3254,17 @@ export default function App() {
                                 }
                                 setNewIndustryInput('');
                               }}
-                            >
-                              + Tambah
-                            </button>
+                            >+ Tambah</button>
                           </div>
-
-                          {/* List all industries with delete */}
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                             {industriesList.map((ind) => (
                               <div key={ind} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', borderRadius: '20px', padding: '4px 12px', fontSize: '13px' }}>
                                 <span>{ind}</span>
                                 {ind !== 'Other' && (
                                   <button
-                                    onClick={() => {
-                                      showConfirm(`Hapus industri "${ind}"? Leads yang sudah pakai industri ini tidak terpengaruh.`, () => {
-                                        setIndustriesList(industriesList.filter(i => i !== ind));
-                                      });
-                                    }}
-                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-red)', display: 'flex', alignItems: 'center', padding: '0', lineHeight: 1 }}
-                                  >
-                                    <X size={13} />
-                                  </button>
+                                    onClick={() => showConfirm(`Hapus industri "${ind}"?`, () => setIndustriesList(industriesList.filter(i => i !== ind)))}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-red)', display: 'flex', alignItems: 'center', padding: 0 }}
+                                  ><X size={13} /></button>
                                 )}
                               </div>
                             ))}
@@ -3285,13 +3272,15 @@ export default function App() {
                         </div>
                       )}
 
-                      {/* Segment Cards — only show industries that have leads */}
+                      {/* Segment Cards — sumber dari data aktual DB (leadsMeta.industries) + leads state */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         {(() => {
                           const colors = ['#06b6d4','#a855f7','#f59e0b','#10b981','#ef4444','#3b82f6','#ec4899','#14b8a6','#f97316','#8b5cf6','#22d3ee','#84cc16','#6b7280'];
-                          const activeIndustries = industriesList.filter(industry => leads.filter(l => l.industry === industry).length > 0);
 
-                          if (activeIndustries.length === 0) {
+                          // Ambil industri unik langsung dari leads yang ada — otomatis sinkron dengan DB
+                          const industriesFromLeads = [...new Set(leads.map(l => l.industry).filter(Boolean))].sort();
+
+                          if (industriesFromLeads.length === 0) {
                             return (
                               <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)', fontSize: '13px' }}>
                                 Belum ada leads terdaftar. Tambahkan leads terlebih dahulu.
@@ -3299,10 +3288,10 @@ export default function App() {
                             );
                           }
 
-                          return activeIndustries.map((industry, idx) => {
+                          return industriesFromLeads.map((industry, idx) => {
                             const isExpanded = expandedSegmentId === industry;
                             const industryLeads = leads.filter(l => l.industry === industry);
-                            const color = colors[industriesList.indexOf(industry) % colors.length];
+                            const color = colors[idx % colors.length];
 
                             return (
                               <div
@@ -3383,6 +3372,7 @@ export default function App() {
                       </div>
                     </>
                   )}
+
                   {/* TAB 3: Operators Role Directory */}
                   {operatorTab === 'roles' && (
                     <div className="glass-panel" style={{ background: 'rgba(15, 23, 42, 0.4)' }}>

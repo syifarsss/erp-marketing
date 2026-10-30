@@ -552,4 +552,61 @@ export const api = {
     });
     return handleResponse(res);
   },
+
+  // Performance Tracking
+  getPerformanceTargets: async (tahun) => {
+    const res = await fetch(`${API_BASE_URL}/performance/targets?tahun=${tahun}`, {
+      headers: getHeaders()
+    });
+    return handleResponse(res);
+  },
+
+  savePerformanceTargets: async (tahun, targets) => {
+    const res = await fetch(`${API_BASE_URL}/performance/targets`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ tahun, targets })
+    });
+    return handleResponse(res);
+  },
+
+  getPerformanceRealizations: async (tahun) => {
+    const res = await fetch(`${API_BASE_URL}/performance/realizations?tahun=${tahun}`, {
+      headers: getHeaders()
+    });
+    return handleResponse(res);
+  },
+
+  getPerformanceRealizationsList: async (tahun) => {
+    const res = await fetch(`${API_BASE_URL}/performance/realizations/list?tahun=${tahun}`, {
+      headers: getHeaders()
+    });
+    return handleResponse(res);
+  },
+
+  addPerformanceRealization: async (data) => {
+    const res = await fetch(`${API_BASE_URL}/performance/realizations`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    });
+    return handleResponse(res);
+  },
+
+  updatePerformanceRealization: async (id, data) => {
+    const res = await fetch(`${API_BASE_URL}/performance/realizations/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    });
+    return handleResponse(res);
+  },
+
+  deletePerformanceRealization: async (id) => {
+    const res = await fetch(`${API_BASE_URL}/performance/realizations/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    });
+    return handleResponse(res);
+  },
 };

@@ -8,7 +8,8 @@ import {
   Users2, AlertTriangle, Eye, ShieldAlert, KeyRound, Mail, ChevronDown, ChevronRight,
   MapPin, Building, Landmark, Phone, PlusCircle, ArrowLeft, Send, MoreVertical, FileText,
   Copy, ExternalLink, ListChecks, CircleDot, Clipboard, PhoneCall, CheckSquare, CalendarDays,
-  Menu, X, MoreHorizontal, UserPlus, Activity, ImageIcon, FileSpreadsheet, Archive
+  Menu, X, MoreHorizontal, UserPlus, Activity, ImageIcon, FileSpreadsheet, Archive,
+  TrendingUp
 } from 'lucide-react';
 import { api, API_BASE_URL } from './services/api';
 import GscDashboardPanel from './components/GscDashboardPanel';
@@ -169,6 +170,42 @@ export default function App() {
   const [noteFormOpen, setNoteFormOpen] = useState(false);
   const [noteEditData, setNoteEditData] = useState({ id: '', title: '', content: '', category: 'Lainnya' });
 
+  // Performance Tracking — constants
+  const JENIS_PROJECT_LIST = ['CFD', 'FEA', 'Engineering Package', 'Process Simulation', 'Other'];
+  const defaultTargetForm = () => JENIS_PROJECT_LIST.map(j => ({
+    jenis_project: j,
+    target_revenue: '0',
+    target_project: '0'
+  }));
+
+  // Performance Tracking — sidebar and year
+  const [performanceDropdownOpen, setPerformanceDropdownOpen] = useState(false);
+  const [targetYear, setTargetYear] = useState(new Date().getFullYear());
+  const [realisasiYear, setRealisasiYear] = useState(new Date().getFullYear());
+
+  // Performance Tracking — data
+  const [performanceTargets, setPerformanceTargets] = useState([]);
+  const [performanceRealizations, setPerformanceRealizations] = useState(null);
+  const [realizationList, setRealizationList] = useState([]);
+
+  // Performance Tracking — target form
+  const [targetForm, setTargetForm] = useState(defaultTargetForm());
+  const [targetFormErrors, setTargetFormErrors] = useState({});
+  const [targetSaving, setTargetSaving] = useState(false);
+
+  // Performance Tracking — realisasi modals
+  const [addRealisasiModalOpen, setAddRealisasiModalOpen] = useState(false);
+  const [editRealisasiModalOpen, setEditRealisasiModalOpen] = useState(false);
+  const [editRealisasiData, setEditRealisasiData] = useState(null);
+  const [realisasiForm, setRealisasiForm] = useState({
+    jenis_project: '',
+    nama_project: '',
+    nilai_revenue: '',
+    tanggal_selesai: ''
+  });
+  const [realisasiFormErrors, setRealisasiFormErrors] = useState({});
+  const [realisasiSaving, setRealisasiSaving] = useState(false);
+
   // Init theme
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -226,6 +263,7 @@ export default function App() {
     switch (view) {
       case 'dashboard':
         fetchDashboard();
+        fetchPerformanceRealizations(new Date().getFullYear());
         break;
       case 'operator-crm':
         fetchLeads();
@@ -253,6 +291,13 @@ export default function App() {
         break;
       case 'catatan':
         fetchNotes();
+        break;
+      case 'performance-target':
+        fetchPerformanceTargets(targetYear);
+        break;
+      case 'performance-realisasi':
+        fetchPerformanceRealizations(realisasiYear);
+        fetchRealizationList(realisasiYear);
         break;
       default:
         break;
@@ -480,6 +525,77 @@ export default function App() {
     }
   };
 
+  // Performance Tracking fetch functions
+  const fetchPerformanceTargets = async (tahun) => {
+    try {
+      const data = await api.getPerformanceTargets(tahun);
+      const merged = JENIS_PROJECT_LIST.map(j => {
+        const found = Array.isArray(data) ? data.find(d => d.jenis_project === j) : null;
+        return found || { jenis_project: j, target_revenue: 0, target_project: 0 };
+      });
+      setPerformanceTargets(merged);
+      setTargetForm(merged.map(t => ({
+        jenis_project: t.jenis_project,
+        target_revenue: String(t.target_revenue),
+        target_project: String(t.target_project)
+      })));
+    } catch (err) {
+      console.error('fetchPerformanceTargets error:', err);
+    }
+  };
+
+  const fetchPerformanceRealizations = async (tahun) => {
+    try {
+      const data = await api.getPerformanceRealizations(tahun);
+      setPerformanceRealizations(data);
+    } catch (err) {
+      console.error('fetchPerformanceRealizations error:', err);
+    }
+  };
+
+  const fetchRealizationList = async (tahun) => {
+    try {
+      const data = await api.getPerformanceRealizationsList(tahun);
+      setRealizationList(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('fetchRealizationList error:', err);
+    }
+  };
+
+  // Performance — target form handlers
+  const updateTargetFormRow = (idx, field, value) => {
+    const updated = [...targetForm];
+    updated[idx] = { ...updated[idx], [field]: value };
+    setTargetForm(updated);
+
+    const errors = { ...targetFormErrors };
+    const errorKey = `${updated[idx].jenis_project}_${field === 'target_revenue' ? 'revenue' : 'project'}`;
+    const num = parseFloat(value);
+    if (value === '' || isNaN(num) || num < 0) {
+      errors[errorKey] = 'Nilai tidak boleh negatif atau kosong.';
+    } else {
+      delete errors[errorKey];
+    }
+    setTargetFormErrors(errors);
+  };
+
+  const saveTargets = async () => {
+    if (Object.keys(targetFormErrors).length > 0) return;
+    setTargetSaving(true);
+    try {
+      await api.savePerformanceTargets(targetYear, targetForm.map(r => ({
+        jenis_project: r.jenis_project,
+        target_revenue: parseFloat(r.target_revenue) || 0,
+        target_project: parseInt(r.target_project, 10) || 0
+      })));
+      showAlert('Target berhasil disimpan.', 'Sukses', 'success');
+    } catch (err) {
+      showAlert(err.message || 'Gagal menyimpan target.', 'Gagal', 'error');
+    } finally {
+      setTargetSaving(false);
+    }
+  };
+
   const saveNote = async (e) => {
     e.preventDefault();
     try {
@@ -568,7 +684,9 @@ export default function App() {
       notes: lead.notes || '',
       lead_score: lead.lead_score || 50,
       verified: lead.verified || false,
-      logo_url: lead.logo_url || ''
+      logo_url: lead.logo_url || '',
+      jenis_project: lead.jenis_project || '',
+      nilai_revenue: lead.nilai_revenue || ''
     });
     setFuNewContactPhone('');
     setFuNewContactNotes('');
@@ -585,7 +703,7 @@ export default function App() {
 
       if (fuEditForm.id) {
         // Edit existing project/prospect
-        await api.updateProject(fuEditForm.id, {
+        const updateResult = await api.updateProject(fuEditForm.id, {
           name_project: fuEditForm.name,
           client_name: fuEditForm.company,
           contact_name: fuEditForm.contact_name || '',
@@ -594,12 +712,19 @@ export default function App() {
           phone: fuEditForm.phone || '',
           notes: fuEditForm.notes || '',
           source: fuEditForm.source || 'Organic',
-          deadline: fuEditForm.deadline || null
+          deadline: fuEditForm.deadline || null,
+          jenis_project: fuEditForm.jenis_project || null,
+          nilai_revenue: fuEditForm.nilai_revenue !== '' && fuEditForm.nilai_revenue !== null && fuEditForm.nilai_revenue !== undefined
+            ? parseFloat(fuEditForm.nilai_revenue)
+            : null
         });
         if (fuSelectedProspect && (fuSelectedProspect.lead.id === fuEditForm.id || fuSelectedProspect.lead.no_project === fuEditForm.id)) {
           openFuProspectDetail(fuEditForm.id);
         }
         showAlert('Prospek berhasil diperbarui.', 'Sukses', 'success');
+        if (updateResult && updateResult.warning) {
+          showAlert(updateResult.warning, 'Perhatian', 'warning');
+        }
       } else {
         // Create new project/prospect
         await api.createProject({
@@ -618,6 +743,11 @@ export default function App() {
       }
       setFuEditModalOpen(false);
       fetchFollowUpLeads();
+      // If status was set to DONE, refresh realization data so Performance page updates immediately
+      if (fuEditForm.status && fuEditForm.status.toUpperCase() === 'DONE') {
+        fetchPerformanceRealizations(realisasiYear);
+        fetchRealizationList(realisasiYear);
+      }
     } catch (err) {
       showAlert(err.message, 'Gagal', 'error');
     }
@@ -780,6 +910,97 @@ export default function App() {
     if (num >= 1000000) return `Rp ${Math.round(num / 1000000)}jt`;
     if (num >= 1000) return `Rp ${Math.round(num / 1000)}rb`;
     return `Rp ${num}`;
+  };
+
+  // Performance Tracking helpers
+  // Format revenue: rb/jt/M with Indonesian decimal comma
+  const formatRevenue = (value) => {
+    const num = parseFloat(value) || 0;
+    if (num === 0) return 'Rp 0';
+    if (num < 1_000_000) return `Rp ${Math.round(num / 1000)} rb`;
+    if (num < 1_000_000_000) return `Rp ${(num / 1_000_000).toFixed(1).replace('.', ',')} jt`;
+    return `Rp ${(num / 1_000_000_000).toFixed(1).replace('.', ',')} M`;
+  };
+
+  // Convert target_revenue (stored in miliar) to rupiah penuh
+  const convertTargetToRupiah = (miliar) => {
+    return (parseFloat(miliar) || 0) * 1_000_000_000;
+  };
+
+  // Calc percentage achieved; returns null if target is 0
+  const calcPersen = (realisasi, target) => {
+    const t = parseFloat(target) || 0;
+    const r = parseFloat(realisasi) || 0;
+    if (t === 0) return null;
+    return parseFloat(((r / t) * 100).toFixed(1));
+  };
+
+  // Calc remaining target (can be negative if exceeded)
+  const calcSisa = (target, realisasi) => {
+    return (parseFloat(target) || 0) - (parseFloat(realisasi) || 0);
+  };
+
+  // Get status label and color from percentage
+  const getStatusLabel = (persen) => {
+    if (persen === null) return { text: '-', color: 'var(--text-muted)' };
+    if (persen >= 70) return { text: 'Di jalur', color: 'var(--accent-green)' };
+    if (persen >= 50) return { text: 'Perlu dorong', color: '#f59e0b' };
+    return { text: 'Tertinggal', color: 'var(--accent-red)' };
+  };
+
+  // Format number with thousand separator dots (Indonesian style)
+  const formatRupiahInput = (val) => {
+    if (val === '' || val === null || val === undefined) return '';
+    const num = String(val).replace(/\D/g, '');
+    if (!num) return '';
+    return num.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
+  const parseRupiahInput = (val) => {
+    if (!val) return '';
+    return String(val).replace(/\./g, '');
+  };
+
+  // Performance — realisasi form handlers
+  const saveRealisasi = async (isEdit = false) => {
+    const errors = {};
+    if (!realisasiForm.jenis_project) errors.jenis_project = 'Jenis project wajib dipilih.';
+    if (!realisasiForm.nama_project?.trim()) errors.nama_project = 'Nama project wajib diisi.';
+    if (realisasiForm.nilai_revenue === '' || realisasiForm.nilai_revenue === null) {
+      errors.nilai_revenue = 'Nilai revenue wajib diisi.';
+    } else if (parseFloat(realisasiForm.nilai_revenue) < 0) {
+      errors.nilai_revenue = 'Nilai revenue tidak boleh negatif.';
+    }
+    if (!realisasiForm.tanggal_selesai) errors.tanggal_selesai = 'Tanggal selesai wajib diisi.';
+    setRealisasiFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    setRealisasiSaving(true);
+    try {
+      const payload = {
+        jenis_project: realisasiForm.jenis_project,
+        nama_project: realisasiForm.nama_project.trim(),
+        nilai_revenue: parseFloat(realisasiForm.nilai_revenue) || 0,
+        tanggal_selesai: realisasiForm.tanggal_selesai
+      };
+      if (isEdit && editRealisasiData) {
+        await api.updatePerformanceRealization(editRealisasiData.id, payload);
+        showAlert('Realisasi berhasil diperbarui.', 'Sukses', 'success');
+        setEditRealisasiModalOpen(false);
+      } else {
+        await api.addPerformanceRealization(payload);
+        showAlert('Realisasi berhasil ditambahkan.', 'Sukses', 'success');
+        setAddRealisasiModalOpen(false);
+      }
+      setRealisasiForm({ jenis_project: '', nama_project: '', nilai_revenue: '', tanggal_selesai: '' });
+      setEditRealisasiData(null);
+      fetchPerformanceRealizations(realisasiYear);
+      fetchRealizationList(realisasiYear);
+    } catch (err) {
+      showAlert(err.message || 'Gagal menyimpan realisasi.', 'Gagal', 'error');
+    } finally {
+      setRealisasiSaving(false);
+    }
   };
 
   // Helper: time ago in Indonesian
@@ -2039,6 +2260,54 @@ export default function App() {
             )}
           </li>
 
+          {/* Performance group */}
+          <li>
+            <div
+              className={`sidebar-item ${['performance-target', 'performance-realisasi'].includes(currentView) ? 'active' : ''}`}
+              style={{ justifyContent: 'space-between', cursor: 'pointer' }}
+              onClick={() => setPerformanceDropdownOpen(!performanceDropdownOpen)}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <Target size={20} />
+                <span>Performance</span>
+              </div>
+              {performanceDropdownOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </div>
+
+            {performanceDropdownOpen && (
+              <ul style={{ listStyle: 'none', paddingLeft: '24px', display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                <li>
+                  <a
+                    className={`sidebar-item ${currentView === 'performance-target' ? 'active' : ''}`}
+                    style={{ fontSize: '13px', padding: '8px 12px' }}
+                    onClick={() => {
+                      setCurrentView('performance-target');
+                      setPerformanceDropdownOpen(true);
+                      setSidebarOpen(false);
+                    }}
+                  >
+                    <Target size={16} />
+                    <span>Target</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    className={`sidebar-item ${currentView === 'performance-realisasi' ? 'active' : ''}`}
+                    style={{ fontSize: '13px', padding: '8px 12px' }}
+                    onClick={() => {
+                      setCurrentView('performance-realisasi');
+                      setPerformanceDropdownOpen(true);
+                      setSidebarOpen(false);
+                    }}
+                  >
+                    <TrendingUp size={16} />
+                    <span>Realisasi</span>
+                  </a>
+                </li>
+              </ul>
+            )}
+          </li>
+
           <li>
             <a
               className={`sidebar-item ${currentView === 'catatan' ? 'active' : ''}`}
@@ -2145,6 +2414,131 @@ export default function App() {
           {/* VIEW: DASHBOARD */}
           {currentView === 'dashboard' && dashboardData && (
             <>
+              {/* ── REVENUE PERFORMANCE ── */}
+              {performanceRealizations && (() => {
+                const currentYear = new Date().getFullYear();
+                const { targets, realizations } = performanceRealizations;
+
+                // Total revenue
+                const totalTargetMiliar = targets.reduce((s, t) => s + (parseFloat(t.target_revenue) || 0), 0);
+                const totalTargetRupiah = convertTargetToRupiah(totalTargetMiliar);
+                const totalRealRevenue = realizations.reduce((s, r) => s + (parseFloat(r.total_revenue) || 0), 0);
+                const persenRevenue = calcPersen(totalRealRevenue, totalTargetRupiah);
+                const sisaRevenue = calcSisa(totalTargetRupiah, totalRealRevenue);
+                const labelRevenue = getStatusLabel(persenRevenue);
+
+                // Total project
+                const totalTargetProject = targets.reduce((s, t) => s + (parseInt(t.target_project, 10) || 0), 0);
+                const totalRealProject = realizations.reduce((s, r) => s + (parseInt(r.total_project, 10) || 0), 0);
+                const persenProject = calcPersen(totalRealProject, totalTargetProject);
+                const sisaProject = calcSisa(totalTargetProject, totalRealProject);
+                const labelProject = getStatusLabel(persenProject);
+
+                const barRevenue = persenRevenue !== null ? Math.min(persenRevenue, 100) : 0;
+                const barProject = persenProject !== null ? Math.min(persenProject, 100) : 0;
+
+                return (
+                  <div className="glass-panel" style={{ padding: '24px' }}>
+                    {/* Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
+                      <div>
+                        <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <TrendingUp size={20} style={{ color: 'var(--accent-cyan)' }} />
+                          Revenue Performance
+                        </h3>
+                        <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
+                          Target dan realisasi tahun {currentYear}. Nilai dalam miliar rupiah (M).
+                        </p>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '4px 10px', background: 'var(--bg-card)', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
+                          Tahun {currentYear}
+                        </span>
+                        <span
+                          style={{ fontSize: '12px', fontWeight: 700, padding: '4px 12px', borderRadius: '20px', cursor: 'pointer',
+                            background: labelRevenue.color !== 'var(--text-muted)' ? `${labelRevenue.color}20` : 'rgba(107,114,128,0.15)',
+                            color: labelRevenue.color, border: `1px solid ${labelRevenue.color}40` }}
+                        >
+                          {labelRevenue.text}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Two metric cards */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+
+                      {/* Revenue card */}
+                      <div style={{ background: 'var(--bg-card)', borderRadius: '14px', padding: '20px', border: '1px solid var(--border-color)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Revenue</span>
+                          <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '999px',
+                            background: labelRevenue.color !== 'var(--text-muted)' ? `${labelRevenue.color}20` : 'rgba(107,114,128,0.15)',
+                            color: labelRevenue.color, border: `1px solid ${labelRevenue.color}40` }}>
+                            {labelRevenue.text}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '14px', gap: '12px', flexWrap: 'wrap' }}>
+                          <div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px' }}>Realisasi</div>
+                            <div style={{ fontSize: '26px', fontWeight: 800, color: '#fff', lineHeight: 1 }}>{formatRevenue(totalRealRevenue)}</div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px' }}>Target</div>
+                            <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-muted)' }}>{formatRevenue(totalTargetRupiah)}</div>
+                          </div>
+                        </div>
+                        <div style={{ background: 'var(--border-color)', borderRadius: '999px', height: '6px', overflow: 'hidden', marginBottom: '10px' }}>
+                          <div style={{ width: `${barRevenue}%`, height: '100%', borderRadius: '999px', transition: 'width 0.5s ease',
+                            background: `linear-gradient(90deg, ${labelRevenue.color !== 'var(--text-muted)' ? labelRevenue.color : '#6b7280'}, var(--accent-cyan))` }} />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                          <span style={{ fontWeight: 700, color: labelRevenue.color }}>
+                            {persenRevenue !== null ? `${persenRevenue.toFixed(1).replace('.', ',')}% dari target` : '-'}
+                          </span>
+                          <span style={{ color: 'var(--text-muted)' }}>
+                            {persenRevenue !== null ? `Sisa ${formatRevenue(Math.abs(sisaRevenue))} menuju target` : 'Target belum ditetapkan'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Project card */}
+                      <div style={{ background: 'var(--bg-card)', borderRadius: '14px', padding: '20px', border: '1px solid var(--border-color)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Project</span>
+                          <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '999px',
+                            background: labelProject.color !== 'var(--text-muted)' ? `${labelProject.color}20` : 'rgba(107,114,128,0.15)',
+                            color: labelProject.color, border: `1px solid ${labelProject.color}40` }}>
+                            {labelProject.text}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '14px', gap: '12px', flexWrap: 'wrap' }}>
+                          <div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px' }}>Realisasi</div>
+                            <div style={{ fontSize: '26px', fontWeight: 800, color: '#fff', lineHeight: 1 }}>{totalRealProject} <span style={{ fontSize: '14px', fontWeight: 400, color: 'var(--text-muted)' }}>project</span></div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px' }}>Target</div>
+                            <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-muted)' }}>{totalTargetProject} <span style={{ fontSize: '12px' }}>project</span></div>
+                          </div>
+                        </div>
+                        <div style={{ background: 'var(--border-color)', borderRadius: '999px', height: '6px', overflow: 'hidden', marginBottom: '10px' }}>
+                          <div style={{ width: `${barProject}%`, height: '100%', borderRadius: '999px', transition: 'width 0.5s ease',
+                            background: `linear-gradient(90deg, ${labelProject.color !== 'var(--text-muted)' ? labelProject.color : '#6b7280'}, var(--accent-cyan))` }} />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                          <span style={{ fontWeight: 700, color: labelProject.color }}>
+                            {persenProject !== null ? `${persenProject.toFixed(1).replace('.', ',')}% dari target` : '-'}
+                          </span>
+                          <span style={{ color: 'var(--text-muted)' }}>
+                            {persenProject !== null ? `Sisa ${Math.max(0, sisaProject)} project menuju target` : 'Target belum ditetapkan'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* KPI CARDS */}
               <div className="kpi-grid">
                 <div className="kpi-card cyan">
@@ -2769,6 +3163,7 @@ export default function App() {
                   )}
                 </div>
               )}
+
             </>
           )}
 
@@ -4624,6 +5019,402 @@ export default function App() {
             </>
           )}
 
+
+          {/* ====== VIEW: PERFORMANCE TARGET ====== */}
+          {currentView === 'performance-target' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {/* Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 800 }}>Target Kinerja</h2>
+                  <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: '13px' }}>Tetapkan target revenue dan jumlah project per jenis untuk tahun yang dipilih</p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <select
+                    className="form-select"
+                    style={{ width: '110px' }}
+                    value={targetYear}
+                    onChange={e => {
+                      const y = parseInt(e.target.value);
+                      setTargetYear(y);
+                      fetchPerformanceTargets(y);
+                    }}
+                  >
+                    {[-2, -1, 0, 1, 2].map(offset => {
+                      const y = new Date().getFullYear() + offset;
+                      return <option key={y} value={y}>{y}</option>;
+                    })}
+                  </select>
+                  {user?.role === 'Superadmin' && (
+                    <button
+                      className="btn btn-primary"
+                      onClick={saveTargets}
+                      disabled={Object.keys(targetFormErrors).length > 0 || targetSaving}
+                    >
+                      <Target size={16} />
+                      {targetSaving ? 'Menyimpan...' : 'Simpan target'}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Two cards side by side */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+
+                {/* Card: Target Revenue */}
+                <div className="glass-panel" style={{ padding: '20px' }}>
+                  <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <DollarSign size={18} style={{ color: 'var(--accent-cyan)' }} />
+                    Target Revenue
+                  </h3>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                        <th style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--text-muted)', fontWeight: 600 }}>Jenis Project</th>
+                        <th style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--text-muted)', fontWeight: 600 }}>Target (M Rp)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {targetForm.map((row, idx) => (
+                        <tr key={row.jenis_project} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                          <td style={{ padding: '8px' }}>{row.jenis_project}</td>
+                          <td style={{ padding: '8px', textAlign: 'right' }}>
+                            {user?.role === 'Superadmin' ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    className="form-input"
+                                    style={{ width: '100px', textAlign: 'right', padding: '4px 8px', fontSize: '13px' }}
+                                    value={row.target_revenue}
+                                    onChange={e => updateTargetFormRow(idx, 'target_revenue', e.target.value)}
+                                  />
+                                  <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>M</span>
+                                </div>
+                                {targetFormErrors[`${row.jenis_project}_revenue`] && (
+                                  <span style={{ color: 'var(--accent-red)', fontSize: '11px' }}>
+                                    {targetFormErrors[`${row.jenis_project}_revenue`]}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span>{parseFloat(row.target_revenue) || 0} M</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr style={{ borderTop: '2px solid var(--border-color)' }}>
+                        <td style={{ padding: '8px', fontWeight: 700 }}>Total</td>
+                        <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700 }}>
+                          {targetForm.reduce((s, r) => s + (parseFloat(r.target_revenue) || 0), 0).toFixed(2)} M
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                {/* Card: Target Project */}
+                <div className="glass-panel" style={{ padding: '20px' }}>
+                  <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Award size={18} style={{ color: 'var(--accent-purple)' }} />
+                    Target Project
+                  </h3>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                        <th style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--text-muted)', fontWeight: 600 }}>Jenis Project</th>
+                        <th style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--text-muted)', fontWeight: 600 }}>Target (project)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {targetForm.map((row, idx) => (
+                        <tr key={row.jenis_project} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                          <td style={{ padding: '8px' }}>{row.jenis_project}</td>
+                          <td style={{ padding: '8px', textAlign: 'right' }}>
+                            {user?.role === 'Superadmin' ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  className="form-input"
+                                  style={{ width: '80px', textAlign: 'right', padding: '4px 8px', fontSize: '13px' }}
+                                  value={row.target_project}
+                                  onChange={e => updateTargetFormRow(idx, 'target_project', e.target.value)}
+                                />
+                                {targetFormErrors[`${row.jenis_project}_project`] && (
+                                  <span style={{ color: 'var(--accent-red)', fontSize: '11px' }}>
+                                    {targetFormErrors[`${row.jenis_project}_project`]}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span>{parseInt(row.target_project, 10) || 0}</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr style={{ borderTop: '2px solid var(--border-color)' }}>
+                        <td style={{ padding: '8px', fontWeight: 700 }}>Total</td>
+                        <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700 }}>
+                          {targetForm.reduce((s, r) => s + (parseInt(r.target_project, 10) || 0), 0)} project
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ====== VIEW: PERFORMANCE REALISASI ====== */}
+          {currentView === 'performance-realisasi' && (() => {
+            // Compute revenue data
+            const getCardData = (type) => {
+              if (!performanceRealizations) return null;
+              const { targets, realizations } = performanceRealizations;
+              if (type === 'revenue') {
+                const totalTargetRupiah = targets.reduce((s, t) => s + convertTargetToRupiah(t.target_revenue), 0);
+                const totalReal = realizations.reduce((s, r) => s + (parseFloat(r.total_revenue) || 0), 0);
+                const persen = calcPersen(totalReal, totalTargetRupiah);
+                const sisa = calcSisa(totalTargetRupiah, totalReal);
+                const rows = JENIS_PROJECT_LIST.map(j => {
+                  const t = targets.find(x => x.jenis_project === j);
+                  const r = realizations.find(x => x.jenis_project === j);
+                  const tRupiah = convertTargetToRupiah(t?.target_revenue || 0);
+                  const rVal = parseFloat(r?.total_revenue || 0);
+                  return { jenis: j, real: rVal, target: tRupiah, persen: calcPersen(rVal, tRupiah), sisa: calcSisa(tRupiah, rVal) };
+                });
+                return { totalReal, totalTarget: totalTargetRupiah, persen, sisa, rows, type: 'revenue' };
+              } else {
+                const totalTarget = targets.reduce((s, t) => s + (parseInt(t.target_project, 10) || 0), 0);
+                const totalReal = realizations.reduce((s, r) => s + (parseInt(r.total_project, 10) || 0), 0);
+                const persen = calcPersen(totalReal, totalTarget);
+                const sisa = calcSisa(totalTarget, totalReal);
+                const rows = JENIS_PROJECT_LIST.map(j => {
+                  const t = targets.find(x => x.jenis_project === j);
+                  const r = realizations.find(x => x.jenis_project === j);
+                  const tVal = parseInt(t?.target_project || 0, 10);
+                  const rVal = parseInt(r?.total_project || 0, 10);
+                  return { jenis: j, real: rVal, target: tVal, persen: calcPersen(rVal, tVal), sisa: calcSisa(tVal, rVal) };
+                });
+                return { totalReal, totalTarget, persen, sisa, rows, type: 'project' };
+              }
+            };
+            const revData = getCardData('revenue');
+            const projData = getCardData('project');
+
+            const renderCard = (data, title) => {
+              if (!data) return <div className="glass-panel" style={{ padding: '20px' }}><p style={{ color: 'var(--text-muted)' }}>Memuat data...</p></div>;
+              const label = getStatusLabel(data.persen);
+              const barWidth = data.persen !== null ? Math.min(data.persen, 100) : 0;
+              return (
+                <div className="glass-panel" style={{ padding: '20px' }}>
+                  <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 700 }}>{title}</h3>
+                  {/* Summary section */}
+                  <div style={{ background: 'var(--bg-card)', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                      <div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px' }}>REALISASI</div>
+                        <div style={{ fontSize: '20px', fontWeight: 800 }}>
+                          {data.type === 'revenue' ? formatRevenue(data.totalReal) : data.totalReal}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '2px' }}>TARGET</div>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-muted)' }}>
+                          {data.type === 'revenue' ? formatRevenue(data.totalTarget) : data.totalTarget}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Progress bar */}
+                    <div style={{ background: 'var(--border-color)', borderRadius: '999px', height: '8px', overflow: 'hidden', marginBottom: '8px' }}>
+                      <div style={{ width: `${barWidth}%`, height: '100%', background: 'linear-gradient(90deg, var(--accent-cyan), var(--accent-green))', borderRadius: '999px', transition: 'width 0.4s ease' }} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                      <span style={{ fontWeight: 700, color: label.color }}>
+                        {data.persen !== null ? `${data.persen.toFixed(1).replace('.', ',')}%` : '-'}
+                      </span>
+                      <span style={{ color: 'var(--text-muted)' }}>
+                        Sisa: {data.persen !== null
+                          ? (data.type === 'revenue' ? formatRevenue(data.sisa) : data.sisa)
+                          : '-'}
+                      </span>
+                    </div>
+                  </div>
+                  {/* Per-type rows */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {data.rows.map(row => {
+                      const rowLabel = getStatusLabel(row.persen);
+                      const rowBar = row.persen !== null ? Math.min(row.persen, 100) : 0;
+                      return (
+                        <div key={row.jenis} style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 600 }}>{row.jenis}</span>
+                            <span style={{ fontSize: '12px', fontWeight: 700, color: rowLabel.color }}>{row.persen !== null ? `${row.persen.toFixed(1).replace('.', ',')}%` : '-'}</span>
+                          </div>
+                          <div style={{ background: 'var(--border-color)', borderRadius: '999px', height: '5px', overflow: 'hidden', marginBottom: '6px' }}>
+                            <div style={{ width: `${rowBar}%`, height: '100%', background: rowLabel.color !== 'var(--text-muted)' ? rowLabel.color : 'var(--border-color)', borderRadius: '999px', transition: 'width 0.4s ease' }} />
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
+                            <span>
+                              {data.type === 'revenue'
+                                ? `${formatRevenue(row.real)} dari ${formatRevenue(row.target)}`
+                                : `${row.real} dari ${row.target} project`}
+                            </span>
+                            <span style={{ color: rowLabel.color, fontWeight: 600 }}>{rowLabel.text}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            };
+
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                {/* Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 800 }}>Realisasi Kinerja</h2>
+                    <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: '13px' }}>
+                      📊 Data bersumber dari Kanban Follow Up (otomatis saat kartu masuk status Done) dan entri manual.
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    <select
+                      className="form-select"
+                      style={{ width: '110px' }}
+                      value={realisasiYear}
+                      onChange={e => {
+                        const y = parseInt(e.target.value);
+                        setRealisasiYear(y);
+                        fetchPerformanceRealizations(y);
+                        fetchRealizationList(y);
+                      }}
+                    >
+                      {[-2, -1, 0, 1, 2].map(offset => {
+                        const y = new Date().getFullYear() + offset;
+                        return <option key={y} value={y}>{y}</option>;
+                      })}
+                    </select>
+                    {user?.role === 'Superadmin' && (
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => {
+                          setRealisasiForm({ jenis_project: '', nama_project: '', nilai_revenue: '', tanggal_selesai: '' });
+                          setRealisasiFormErrors({});
+                          setAddRealisasiModalOpen(true);
+                        }}
+                      >
+                        <Plus size={16} />
+                        Tambah realisasi
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Two summary cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                  {renderCard(revData, '💰 Realisasi Revenue')}
+                  {renderCard(projData, '📁 Realisasi Project')}
+                </div>
+
+                {/* History table */}
+                <div className="glass-panel" style={{ padding: '20px' }}>
+                  <h3 style={{ margin: '0 0 14px', fontSize: '15px', fontWeight: 700 }}>Riwayat Realisasi</h3>
+                  <div className="table-container">
+                    <table className="custom-table" style={{ width: '100%' }}>
+                      <thead>
+                        <tr>
+                          <th style={{ width: '40px' }}>No</th>
+                          <th>Nama Project</th>
+                          <th>Jenis Project</th>
+                          <th>Nilai Revenue</th>
+                          <th>Tanggal Selesai</th>
+                          <th>Sumber</th>
+                          {user?.role === 'Superadmin' && <th style={{ width: '80px' }}>Aksi</th>}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {realizationList.length === 0 ? (
+                          <tr>
+                            <td colSpan={user?.role === 'Superadmin' ? 7 : 6} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '24px' }}>
+                              Belum ada data realisasi untuk tahun {realisasiYear}.
+                            </td>
+                          </tr>
+                        ) : realizationList.map((item, i) => (
+                          <tr key={item.id}>
+                            <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
+                            <td style={{ fontWeight: 600 }}>{item.nama_project}</td>
+                            <td>{item.jenis_project}</td>
+                            <td>{formatRevenue(item.nilai_revenue)}</td>
+                            <td>{item.tanggal_selesai ? new Date(item.tanggal_selesai).toLocaleDateString('id-ID') : '-'}</td>
+                            <td>
+                              <span style={{
+                                display: 'inline-block',
+                                padding: '2px 10px',
+                                borderRadius: '999px',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                background: item.sumber === 'kanban' ? 'rgba(6,182,212,0.15)' : 'rgba(107,114,128,0.15)',
+                                color: item.sumber === 'kanban' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                                border: `1px solid ${item.sumber === 'kanban' ? 'rgba(6,182,212,0.3)' : 'rgba(107,114,128,0.3)'}`,
+                              }}>
+                                {item.sumber === 'kanban' ? 'Kanban' : 'Manual'}
+                              </span>
+                            </td>
+                            {user?.role === 'Superadmin' && (
+                              <td>
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                  <button
+                                    title="Edit"
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-cyan)', padding: '2px' }}
+                                    onClick={() => {
+                                      setEditRealisasiData(item);
+                                      setRealisasiForm({
+                                        jenis_project: item.jenis_project,
+                                        nama_project: item.nama_project,
+                                        nilai_revenue: String(item.nilai_revenue),
+                                        tanggal_selesai: item.tanggal_selesai
+                                      });
+                                      setRealisasiFormErrors({});
+                                      setEditRealisasiModalOpen(true);
+                                    }}
+                                  ><Edit3 size={15} /></button>
+                                  <button
+                                    title="Hapus"
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-red)', padding: '2px' }}
+                                    onClick={() => showConfirm(`Hapus realisasi "${item.nama_project}"?`, async () => {
+                                      try {
+                                        await api.deletePerformanceRealization(item.id);
+                                        showAlert('Realisasi berhasil dihapus.', 'Sukses', 'success');
+                                        fetchPerformanceRealizations(realisasiYear);
+                                        fetchRealizationList(realisasiYear);
+                                      } catch (err) {
+                                        showAlert(err.message || 'Gagal menghapus.', 'Gagal', 'error');
+                                      }
+                                    })}
+                                  ><Trash2 size={15} /></button>
+                                </div>
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ====== VIEW: CATATAN ====== */}
           {currentView === 'catatan' && (
@@ -6577,6 +7368,40 @@ export default function App() {
                 />
               </div>
 
+              {/* Data Kinerja Project — for Performance Tracking */}
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '14px', marginTop: '2px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--accent-cyan)', letterSpacing: '0.8px', display: 'block', marginBottom: '10px', textTransform: 'uppercase' }}>
+                  Data Kinerja Project
+                </span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Jenis Project</label>
+                    <select
+                      className="form-select"
+                      value={fuEditForm.jenis_project || ''}
+                      onChange={e => setFuEditForm({ ...fuEditForm, jenis_project: e.target.value })}
+                    >
+                      <option value="">-- Belum Dipilih --</option>
+                      {JENIS_PROJECT_LIST.map(j => <option key={j} value={j}>{j}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Nilai Revenue (Rp)</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      className="form-input"
+                      placeholder="cth: 2.500.000.000"
+                      value={formatRupiahInput(fuEditForm.nilai_revenue)}
+                      onChange={e => {
+                        const raw = parseRupiahInput(e.target.value);
+                        setFuEditForm({ ...fuEditForm, nilai_revenue: raw });
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Tambah Riwayat Kontak — only for existing prospects */}
               {fuEditForm.id && (
                 <div className="form-group">
@@ -6939,6 +7764,112 @@ export default function App() {
             >
               OK
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ====== MODAL: TAMBAH REALISASI ====== */}
+      {addRealisasiModalOpen && (
+        <div className="modal-overlay" onClick={() => setAddRealisasiModalOpen(false)}>
+          <div className="modal-content" style={{ width: '480px', maxWidth: '95vw' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>Tambah Realisasi</h3>
+              <button onClick={() => setAddRealisasiModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={20} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label className="form-label">Jenis Project <span style={{ color: 'var(--accent-red)' }}>*</span></label>
+                <select className="form-select" value={realisasiForm.jenis_project} onChange={e => setRealisasiForm({ ...realisasiForm, jenis_project: e.target.value })}>
+                  <option value="">-- Pilih Jenis Project --</option>
+                  {JENIS_PROJECT_LIST.map(j => <option key={j} value={j}>{j}</option>)}
+                </select>
+                {realisasiFormErrors.jenis_project && <span style={{ color: 'var(--accent-red)', fontSize: '11px' }}>{realisasiFormErrors.jenis_project}</span>}
+              </div>
+              <div>
+                <label className="form-label">Nama Project <span style={{ color: 'var(--accent-red)' }}>*</span></label>
+                <input className="form-input" type="text" value={realisasiForm.nama_project} onChange={e => setRealisasiForm({ ...realisasiForm, nama_project: e.target.value })} placeholder="Nama project" />
+                {realisasiFormErrors.nama_project && <span style={{ color: 'var(--accent-red)', fontSize: '11px' }}>{realisasiFormErrors.nama_project}</span>}
+              </div>
+              <div>
+                <label className="form-label">Nilai Revenue (Rp penuh) <span style={{ color: 'var(--accent-red)' }}>*</span></label>
+                <input
+                  className="form-input"
+                  type="text"
+                  inputMode="numeric"
+                  value={formatRupiahInput(realisasiForm.nilai_revenue)}
+                  onChange={e => {
+                    const raw = parseRupiahInput(e.target.value);
+                    setRealisasiForm({ ...realisasiForm, nilai_revenue: raw });
+                  }}
+                  placeholder="cth: 2.500.000.000"
+                />
+                {realisasiFormErrors.nilai_revenue && <span style={{ color: 'var(--accent-red)', fontSize: '11px' }}>{realisasiFormErrors.nilai_revenue}</span>}
+              </div>
+              <div>
+                <label className="form-label">Tanggal Selesai <span style={{ color: 'var(--accent-red)' }}>*</span></label>
+                <input className="form-input" type="date" value={realisasiForm.tanggal_selesai} onChange={e => setRealisasiForm({ ...realisasiForm, tanggal_selesai: e.target.value })} />
+                {realisasiFormErrors.tanggal_selesai && <span style={{ color: 'var(--accent-red)', fontSize: '11px' }}>{realisasiFormErrors.tanggal_selesai}</span>}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '20px', justifyContent: 'flex-end' }}>
+              <button className="btn btn-secondary" onClick={() => setAddRealisasiModalOpen(false)}>Batal</button>
+              <button className="btn btn-primary" onClick={() => saveRealisasi(false)} disabled={realisasiSaving}>
+                {realisasiSaving ? 'Menyimpan...' : 'Simpan'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ====== MODAL: EDIT REALISASI ====== */}
+      {editRealisasiModalOpen && (
+        <div className="modal-overlay" onClick={() => setEditRealisasiModalOpen(false)}>
+          <div className="modal-content" style={{ width: '480px', maxWidth: '95vw' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>Edit Realisasi</h3>
+              <button onClick={() => setEditRealisasiModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={20} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label className="form-label">Jenis Project <span style={{ color: 'var(--accent-red)' }}>*</span></label>
+                <select className="form-select" value={realisasiForm.jenis_project} onChange={e => setRealisasiForm({ ...realisasiForm, jenis_project: e.target.value })}>
+                  <option value="">-- Pilih Jenis Project --</option>
+                  {JENIS_PROJECT_LIST.map(j => <option key={j} value={j}>{j}</option>)}
+                </select>
+                {realisasiFormErrors.jenis_project && <span style={{ color: 'var(--accent-red)', fontSize: '11px' }}>{realisasiFormErrors.jenis_project}</span>}
+              </div>
+              <div>
+                <label className="form-label">Nama Project <span style={{ color: 'var(--accent-red)' }}>*</span></label>
+                <input className="form-input" type="text" value={realisasiForm.nama_project} onChange={e => setRealisasiForm({ ...realisasiForm, nama_project: e.target.value })} placeholder="Nama project" />
+                {realisasiFormErrors.nama_project && <span style={{ color: 'var(--accent-red)', fontSize: '11px' }}>{realisasiFormErrors.nama_project}</span>}
+              </div>
+              <div>
+                <label className="form-label">Nilai Revenue (Rp penuh) <span style={{ color: 'var(--accent-red)' }}>*</span></label>
+                <input
+                  className="form-input"
+                  type="text"
+                  inputMode="numeric"
+                  value={formatRupiahInput(realisasiForm.nilai_revenue)}
+                  onChange={e => {
+                    const raw = parseRupiahInput(e.target.value);
+                    setRealisasiForm({ ...realisasiForm, nilai_revenue: raw });
+                  }}
+                  placeholder="cth: 2.500.000.000"
+                />
+                {realisasiFormErrors.nilai_revenue && <span style={{ color: 'var(--accent-red)', fontSize: '11px' }}>{realisasiFormErrors.nilai_revenue}</span>}
+              </div>
+              <div>
+                <label className="form-label">Tanggal Selesai <span style={{ color: 'var(--accent-red)' }}>*</span></label>
+                <input className="form-input" type="date" value={realisasiForm.tanggal_selesai} onChange={e => setRealisasiForm({ ...realisasiForm, tanggal_selesai: e.target.value })} />
+                {realisasiFormErrors.tanggal_selesai && <span style={{ color: 'var(--accent-red)', fontSize: '11px' }}>{realisasiFormErrors.tanggal_selesai}</span>}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '20px', justifyContent: 'flex-end' }}>
+              <button className="btn btn-secondary" onClick={() => setEditRealisasiModalOpen(false)}>Batal</button>
+              <button className="btn btn-primary" onClick={() => saveRealisasi(true)} disabled={realisasiSaving}>
+                {realisasiSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
+              </button>
+            </div>
           </div>
         </div>
       )}

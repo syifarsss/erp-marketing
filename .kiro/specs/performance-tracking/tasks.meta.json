@@ -1,0 +1,331 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Tambahkan DDL tabel `performance_targets` dan `performance_realizations` ke `backend/config/schema.sql`": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174876127
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174895104
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174964144
+      }
+    ],
+    "1.2 Tambahkan ALTER TABLE Prospect ke blok idempotent di `backend/config/db.js`": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174876235
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174895524
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174964927
+      }
+    ],
+    "2.1 Buat file `backend/routes/performance.js` dengan konstanta, middleware, dan endpoint GET targets": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174876313
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174971745
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793175351189
+      }
+    ],
+    "2.2 Tambahkan endpoint POST /targets ke `routes/performance.js`": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174876476
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793175358445
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793175440241
+      }
+    ],
+    "2.3 Tambahkan endpoint GET realizations dan GET realizations/list ke `routes/performance.js`": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174876564
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793175359114
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793175440405
+      }
+    ],
+    "2.4 Tambahkan endpoint POST, PUT, DELETE realizations ke `routes/performance.js`": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174876642
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793175752458
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793175800620
+      }
+    ],
+    "3.1 Perluas UPDATE Prospect di `PUT /:id` untuk menyimpan `jenis_project` dan `nilai_revenue`": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174876720
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174971835
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793175351737
+      }
+    ],
+    "3.2 Tambahkan trigger realisasi otomatis di `PUT /:id` setelah UPDATE Prospect": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174876800
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793175359274
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793175441866
+      }
+    ],
+    "4.1 Tambahkan satu baris di `backend/server.js` untuk mendaftarkan performance router": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174876880
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793175753060
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793175800816
+      }
+    ],
+    "5.1 Tambahkan 7 method Performance Tracking ke objek `api` di `frontend/src/services/api.js`": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174876959
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793175808596
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793175839808
+      }
+    ],
+    "6.1 Tambahkan state variables Performance ke `App.jsx`": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174877040
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793175845583
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793176246552
+      }
+    ],
+    "6.2 Tambahkan helper functions `formatRevenue`, `convertTargetToRupiah`, `calcPersen`, `calcSisa`, `getStatusLabel` ke `App.jsx`": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174877199
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793175846231
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793176246935
+      }
+    ],
+    "6.3 Tambahkan fetch functions dan case baru di `loadViewData` di `App.jsx`": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174877268
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793176252602
+      }
+    ],
+    "7.1 Tambahkan import `TrendingUp` ke lucide-react dan tambahkan `<li>` sidebar Performance": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174877349
+      },
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793176253097
+      }
+    ],
+    "8.1 Implementasikan fungsi `updateTargetFormRow` dan `saveTargets` di `App.jsx`": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174877426
+      }
+    ],
+    "8.2 Implementasikan JSX view `performance-target` di dalam blok render `App.jsx`": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174877506
+      }
+    ],
+    "9.1 Implementasikan JSX header dan dua kartu ringkasan di view `performance-realisasi`": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174877587
+      }
+    ],
+    "9.2 Implementasikan baris per jenis project di dalam dua kartu realisasi": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174877669
+      }
+    ],
+    "9.3 Implementasikan tabel riwayat realisasi di bawah kartu di view `performance-realisasi`": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174877742
+      }
+    ],
+    "10.1 Implementasikan fungsi `saveRealisasi` dan JSX modal tambah/edit realisasi": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174877821
+      }
+    ],
+    "11.1 Tambahkan field \"Jenis Project\" dan \"Nilai Revenue\" ke modal edit Kanban": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174877895
+      }
+    ],
+    "12.1 Setup fast-check dan buat file test untuk helper functions": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174877965
+      }
+    ],
+    "13. Checkpoint — Pastikan semua tests pass dan integrasi berfungsi": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174878040
+      }
+    ],
+    "1. Database — Buat tabel dan ALTER kolom baru": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793174965061
+      }
+    ],
+    "3. Backend — Modifikasi `routes/projects.js` (PUT /:id)": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793175442253
+      }
+    ],
+    "2. Backend — Buat `routes/performance.js`": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793175800934
+      }
+    ],
+    "4. Backend — Daftarkan route di `server.js`": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793175801190
+      }
+    ],
+    "5. Frontend — Tambahkan API methods ke `services/api.js`": [
+      {
+        "executionId": "f0f7c5f9-17e7-479f-b3b3-a11a873f300a",
+        "chatSessionId": "sess_4b7fff1f-f1bc-42db-b681-c4aeb66b7c9c",
+        "timestamp": 1793175839952
+      }
+    ]
+  }
+}

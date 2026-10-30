@@ -34,6 +34,7 @@ app.use('/api/seo', require('./routes/seo'));
 app.use('/api/gsc', require('./routes/gsc'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/notes', require('./routes/notes'));
+app.use('/api/performance', require('./routes/performance'));
 
 // Base route status
 app.get('/api/status', (req, res) => {

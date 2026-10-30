@@ -176,3 +176,33 @@ CREATE TABLE IF NOT EXISTS user_activity_logs (
   FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
+-- 12. Performance Targets (target revenue and project count per year per project type)
+CREATE TABLE IF NOT EXISTS performance_targets (
+  id              INT AUTO_INCREMENT PRIMARY KEY,
+  tahun           INT NOT NULL,
+  jenis_project   VARCHAR(100) NOT NULL,
+  target_revenue  DECIMAL(15, 4) NOT NULL DEFAULT 0,
+  target_project  INT NOT NULL DEFAULT 0,
+  created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_tahun_jenis (tahun, jenis_project)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 13. Performance Realizations (individual realization records from kanban or manual entry)
+CREATE TABLE IF NOT EXISTS performance_realizations (
+  id              INT AUTO_INCREMENT PRIMARY KEY,
+  tahun           INT NOT NULL,
+  jenis_project   VARCHAR(100) NOT NULL,
+  nama_project    VARCHAR(255) NOT NULL,
+  nilai_revenue   DECIMAL(20, 2) NOT NULL DEFAULT 0,
+  tanggal_selesai DATE NOT NULL,
+  sumber          ENUM('manual', 'kanban') NOT NULL DEFAULT 'manual',
+  kanban_card_id  VARCHAR(100) NULL,
+  dibuat_oleh     INT NULL,
+  created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_tahun_jenis (tahun, jenis_project),
+  INDEX idx_kanban_card (kanban_card_id),
+  FOREIGN KEY (dibuat_oleh) REFERENCES User(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

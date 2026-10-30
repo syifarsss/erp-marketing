@@ -39,7 +39,9 @@ router.get('/', verifyToken, async (req, res) => {
         c.logo as logo_url,
         c.is_verified as verified,
         COALESCE(cls.value, 0) as value,
-        100 as lead_score
+        100 as lead_score,
+        p.jenis_project,
+        p.nilai_revenue
       FROM Prospect p
       LEFT JOIN Client c ON p.client_name = c.name
       LEFT JOIN clients cls ON p.client_name = cls.company
@@ -118,7 +120,9 @@ router.get('/:id', verifyToken, async (req, res) => {
         c.is_verified as verified,
         COALESCE(cls.value, 0) as value,
         100 as lead_score,
-        c.id as client_real_id
+        c.id as client_real_id,
+        p.jenis_project,
+        p.nilai_revenue
       FROM Prospect p
       LEFT JOIN Client c ON p.client_name = c.name
       LEFT JOIN clients cls ON p.client_name = cls.company
@@ -283,7 +287,9 @@ router.put('/:id', verifyToken, async (req, res) => {
     phone,
     notes,
     source,
-    deadline
+    deadline,
+    jenis_project,
+    nilai_revenue
   } = req.body;
 
   try {
@@ -300,10 +306,14 @@ router.put('/:id', verifyToken, async (req, res) => {
     const final_status = status !== undefined ? status : current.status;
     const final_order = order !== undefined ? order : current.order;
     const final_last_contact = last_contact_date !== undefined ? last_contact_date : current.last_contact_date;
+    const final_jenis_project = jenis_project !== undefined ? jenis_project : current.jenis_project;
+    const final_nilai_revenue = nilai_revenue !== undefined
+      ? (nilai_revenue !== null && nilai_revenue !== '' ? parseFloat(nilai_revenue) : null)
+      : current.nilai_revenue;
 
     await pool.query(`
       UPDATE Prospect 
-      SET name_project = ?, client_name = ?, contact_name = ?, status = ?, updatedAt = NOW(3), \`order\` = ?, last_contact_date = ?
+      SET name_project = ?, client_name = ?, contact_name = ?, status = ?, updatedAt = NOW(3), \`order\` = ?, last_contact_date = ?, jenis_project = ?, nilai_revenue = ?
       WHERE no_project = ?
     `, [
       final_name_project,
@@ -312,8 +322,51 @@ router.put('/:id', verifyToken, async (req, res) => {
       final_status,
       final_order,
       final_last_contact,
+      final_jenis_project || null,
+      final_nilai_revenue,
       id
     ]);
+
+    // --- Performance Tracking: Auto-create realization when status changes to DONE ---
+    const newStatusUpper = final_status.toUpperCase();
+    if (newStatusUpper === 'DONE' || newStatusUpper === 'WON') {
+      if (!final_jenis_project || final_jenis_project.trim() === '') {
+        // Warning: jenis_project not filled — still update the prospect, just warn
+        // Complete client sync first, then return with warning
+        // (We use a flag approach to return warning after sync is done)
+      } else {
+        try {
+          const [existingReal] = await pool.query(
+            'SELECT id FROM performance_realizations WHERE kanban_card_id = ?',
+            [id]
+          );
+          const today = new Date().toISOString().slice(0, 10);
+          const tahunRealisasi = new Date(today).getFullYear();
+
+          if (existingReal.length === 0) {
+            // No existing record — create new
+            await pool.query(
+              `INSERT INTO performance_realizations
+                 (tahun, jenis_project, nama_project, nilai_revenue, tanggal_selesai, sumber, kanban_card_id, dibuat_oleh)
+               VALUES (?, ?, ?, ?, ?, 'kanban', ?, ?)`,
+              [tahunRealisasi, final_jenis_project, final_name_project, final_nilai_revenue || 0, today, id, req.user.id]
+            );
+          } else {
+            // Record exists — update jenis_project, nama_project, nilai_revenue in case they changed
+            await pool.query(
+              `UPDATE performance_realizations
+               SET jenis_project = ?, nama_project = ?, nilai_revenue = ?, updated_at = NOW()
+               WHERE kanban_card_id = ?`,
+              [final_jenis_project, final_name_project, final_nilai_revenue || 0, id]
+            );
+          }
+        } catch (realErr) {
+          // Don't block status update on realization failure — log and continue
+          console.error('Performance realization auto-create error (non-blocking):', realErr);
+        }
+      }
+    }
+    // --- End Performance Tracking trigger ---
 
     // Fetch existing client info to see current values if they are undefined
     const [existingClient] = await pool.query('SELECT * FROM clients WHERE company = ?', [final_client_name]);
@@ -354,6 +407,12 @@ router.put('/:id', verifyToken, async (req, res) => {
       );
     }
 
+    if ((newStatusUpper === 'DONE' || newStatusUpper === 'WON') && (!final_jenis_project || final_jenis_project.trim() === '')) {
+      return res.json({
+        message: 'Proyek berhasil diperbarui.',
+        warning: 'Realisasi tidak dicatat otomatis karena jenis project belum diisi.'
+      });
+    }
     res.json({ message: 'Proyek berhasil diperbarui.' });
   } catch (err) {
     console.error('Update project error:', err);

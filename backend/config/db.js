@@ -189,6 +189,20 @@ async function initializeDatabase() {
       }
     }
 
+    // 3e. Add new columns to Prospect for Performance Tracking
+    const prospectAlters = [
+      "ALTER TABLE Prospect ADD COLUMN jenis_project VARCHAR(100) NULL",
+      "ALTER TABLE Prospect ADD COLUMN nilai_revenue DECIMAL(20,2) NULL"
+    ];
+    for (const sql of prospectAlters) {
+      try {
+        await conn.query(sql);
+      } catch (err) {
+        if (err.code !== 'ER_DUP_FIELDNAME') throw err;
+        // Column already exists — safe to ignore
+      }
+    }
+
     // 4. Seed default data if User table is empty
     const [rows] = await conn.query('SELECT COUNT(*) as count FROM User');
     if (rows[0].count === 0) {

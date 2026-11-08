@@ -291,9 +291,9 @@ const formatRevenue = (value) => {
   return `Rp ${(num / 1_000_000_000).toFixed(1).replace('.', ',')} M`;
 };
 
-// Konversi miliar rupiah (input Target) → rupiah penuh
-const convertTargetToRupiah = (miliar) => {
-  return (parseFloat(miliar) || 0) * 1_000_000_000;
+// Konversi juta rupiah (input harga_per_project) → rupiah penuh
+const convertJutaToRupiah = (juta) => {
+  return (parseFloat(juta) || 0) * 1_000_000;
 };
 
 // Hitung persentase pencapaian; null jika target=0
@@ -759,12 +759,20 @@ CREATE TABLE IF NOT EXISTS performance_targets (
   id              INT AUTO_INCREMENT PRIMARY KEY,
   tahun           INT NOT NULL,
   jenis_project   VARCHAR(100) NOT NULL,
-  target_revenue  DECIMAL(15, 4) NOT NULL DEFAULT 0,   -- satuan: miliar rupiah
+  harga_per_project DECIMAL(20, 2) NOT NULL DEFAULT 0,  -- satuan: rupiah penuh
   target_project  INT NOT NULL DEFAULT 0,
   created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_tahun_jenis (tahun, jenis_project)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+**Migrasi dari skema lama:** Jika tabel `performance_targets` sudah ada dengan kolom `target_revenue` (DECIMAL miliar rupiah), jalankan:
+```sql
+ALTER TABLE performance_targets ADD COLUMN harga_per_project DECIMAL(20,2) NOT NULL DEFAULT 0;
+UPDATE performance_targets SET harga_per_project = CASE WHEN target_project > 0 THEN (target_revenue * 1000000000 / target_project) ELSE 0 END;
+ALTER TABLE performance_targets DROP COLUMN target_revenue;
+```
+Tidak menggunakan ADD COLUMN IF NOT EXISTS untuk kompatibilitas MySQL dan MariaDB.
 
 -- Tabel catatan realisasi individual
 CREATE TABLE IF NOT EXISTS performance_realizations (
@@ -814,13 +822,16 @@ await pool.query(`
 
 ```json
 [
-  { "jenis_project": "CFD",                  "target_revenue": 5.5, "target_project": 10 },
-  { "jenis_project": "FEA",                  "target_revenue": 3.0, "target_project": 8 },
-  { "jenis_project": "Engineering Package",  "target_revenue": 2.0, "target_project": 5 },
-  { "jenis_project": "Process Simulation",   "target_revenue": 1.5, "target_project": 4 },
-  { "jenis_project": "Other",                "target_revenue": 1.0, "target_project": 3 }
+  {
+    "jenis_project": "CFD",
+    "target_project": 10,
+    "harga_per_project": 2500000000,
+    "target_revenue": 25000000000
+  }
 ]
 ```
+
+> Backend harus mengembalikan tepat 5 elemen (satu per jenis project); `target_revenue` dihitung sebagai `target_project × harga_per_project` dan tidak disimpan di database.
 
 **`GET /api/performance/realizations?tahun=2025`**
 
@@ -911,13 +922,23 @@ Dari hasil prework, beberapa properti yang awalnya terpisah dapat digabung:
 - Label status (Di jalur / Perlu dorong / Tertinggal) untuk tiga range → digabung menjadi satu property yang mencakup semua threshold sekaligus
 - Format revenue (rb/jt/M) untuk tiga threshold → digabung menjadi satu property format
 
-### Property 1: Konversi Satuan Target ke Rupiah Penuh
+### Property 1: Rumus target_revenue
 
-*Untuk semua nilai x ≥ 0, fungsi `convertTargetToRupiah(x)` harus menghasilkan tepat `x * 1_000_000_000`.*
+*Untuk semua target_project ≥ 0 dan harga_per_project ≥ 0: `target_revenue = target_project × harga_per_project`. Kasus khusus: jika target_project = 0, maka target_revenue = 0.*
 
-Properti ini memvalidasi bahwa perbandingan antara `target_revenue` (disimpan dalam miliar) dan `nilai_revenue` realisasi (disimpan dalam rupiah penuh) selalu konsisten. Kesalahan konversi akan membuat semua kalkulasi persen dan sisa menjadi salah.
+Properti ini memvalidasi bahwa nilai target revenue yang dihitung saat dibaca selalu konsisten dengan rumus `target_project × harga_per_project` (keduanya dalam rupiah penuh), dan bahwa kasus `target_project = 0` menghasilkan `target_revenue = 0` tanpa menyebabkan pembagian dengan nol.
 
-**Validates: Requirements 14.6, 2.1, 3.1**
+**Validates: Requirements 14.6, 14.7, 2.1**
+
+---
+
+### Property 1b: Konversi juta ke rupiah
+
+*Untuk semua nilai juta ≥ 0: `convertJutaToRupiah(juta) === juta × 1_000_000`.*
+
+Properti ini memvalidasi bahwa konversi input `harga_per_project` dari satuan juta rupiah ke rupiah penuh selalu benar sebelum dikirim ke backend.
+
+**Validates: Requirements 6.7, 14.6**
 
 ---
 

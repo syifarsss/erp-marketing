@@ -6,45 +6,35 @@ const { verifyToken, requireRole } = require('../middleware/auth');
 const VALID_JENIS = ['CFD', 'FEA', 'Engineering Package', 'Process Simulation', 'Other'];
 
 // GET /api/performance/targets?tahun=YYYY
-// Returns exactly 5 elements (one per VALID_JENIS), with defaults of 0 for missing entries
 router.get('/targets', verifyToken, async (req, res) => {
   const { tahun } = req.query;
-
-  if (!tahun) {
-    return res.status(400).json({ message: 'Parameter tahun wajib diisi.' });
-  }
+  if (!tahun) return res.status(400).json({ message: 'Parameter tahun wajib diisi.' });
 
   const parsedTahun = parseInt(tahun, 10);
-  if (isNaN(parsedTahun)) {
-    return res.status(400).json({ message: 'Parameter tahun harus berupa angka yang valid.' });
-  }
+  if (isNaN(parsedTahun)) return res.status(400).json({ message: 'Parameter tahun harus berupa angka yang valid.' });
 
   try {
     const [rows] = await pool.query(
-      'SELECT jenis_project, target_revenue, target_project FROM performance_targets WHERE tahun = ?',
+      'SELECT jenis_project, target_project, harga_per_project FROM performance_targets WHERE tahun = ?',
       [parsedTahun]
     );
 
-    // Build a lookup map from DB results
     const dbMap = {};
-    for (const row of rows) {
-      dbMap[row.jenis_project] = row;
-    }
+    for (const row of rows) dbMap[row.jenis_project] = row;
 
-    // Merge with VALID_JENIS to always return exactly 5 elements
     const result = VALID_JENIS.map((jenis) => {
-      if (dbMap[jenis]) {
+      const row = dbMap[jenis];
+      if (row) {
+        const tp = parseInt(row.target_project, 10) || 0;
+        const hpp = parseFloat(row.harga_per_project) || 0;
         return {
           jenis_project: jenis,
-          target_revenue: parseFloat(dbMap[jenis].target_revenue) || 0,
-          target_project: parseInt(dbMap[jenis].target_project, 10) || 0
+          target_project: tp,
+          harga_per_project: hpp,
+          target_revenue: tp * hpp   // computed, not stored
         };
       }
-      return {
-        jenis_project: jenis,
-        target_revenue: 0,
-        target_project: 0
-      };
+      return { jenis_project: jenis, target_project: 0, harga_per_project: 0, target_revenue: 0 };
     });
 
     res.json(result);
@@ -54,8 +44,7 @@ router.get('/targets', verifyToken, async (req, res) => {
   }
 });
 
-// POST /api/performance/targets
-// Save/upsert all 5 targets for a given year — Superadmin only
+// POST /api/performance/targets — Superadmin only
 router.post('/targets', verifyToken, requireRole(['Superadmin']), async (req, res) => {
   const { tahun, targets } = req.body;
 
@@ -64,19 +53,14 @@ router.post('/targets', verifyToken, requireRole(['Superadmin']), async (req, re
   }
 
   const parsedTahun = parseInt(tahun, 10);
-  if (isNaN(parsedTahun)) {
-    return res.status(400).json({ message: 'Parameter tahun harus berupa angka yang valid.' });
-  }
+  if (isNaN(parsedTahun)) return res.status(400).json({ message: 'Parameter tahun harus berupa angka yang valid.' });
 
-  // Validate each row
   for (const row of targets) {
     if (!VALID_JENIS.includes(row.jenis_project)) {
-      return res.status(400).json({
-        message: `Jenis project tidak valid: "${row.jenis_project}". Pilihan: ${VALID_JENIS.join(', ')}.`
-      });
+      return res.status(400).json({ message: `Jenis project tidak valid: "${row.jenis_project}".` });
     }
-    if (parseFloat(row.target_revenue) < 0) {
-      return res.status(400).json({ message: 'Nilai target_revenue tidak boleh negatif.' });
+    if (parseFloat(row.harga_per_project) < 0) {
+      return res.status(400).json({ message: 'Nilai harga_per_project tidak boleh negatif.' });
     }
     if (parseInt(row.target_project, 10) < 0) {
       return res.status(400).json({ message: 'Nilai target_project tidak boleh negatif.' });
@@ -85,19 +69,16 @@ router.post('/targets', verifyToken, requireRole(['Superadmin']), async (req, re
 
   try {
     for (const row of targets) {
+      const tp = parseInt(row.target_project, 10) || 0;
+      const hpp = parseFloat(row.harga_per_project) || 0;
       await pool.query(
-        `INSERT INTO performance_targets (tahun, jenis_project, target_revenue, target_project)
+        `INSERT INTO performance_targets (tahun, jenis_project, target_project, harga_per_project)
          VALUES (?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE
-           target_revenue = VALUES(target_revenue),
            target_project = VALUES(target_project),
+           harga_per_project = VALUES(harga_per_project),
            updated_at = NOW()`,
-        [
-          parsedTahun,
-          row.jenis_project,
-          parseFloat(row.target_revenue) || 0,
-          parseInt(row.target_project, 10) || 0
-        ]
+        [parsedTahun, row.jenis_project, tp, hpp]
       );
     }
     res.json({ message: 'Target berhasil disimpan.' });
@@ -143,7 +124,7 @@ router.get('/realizations', verifyToken, async (req, res) => {
   try {
     // Fetch targets
     const [targetRows] = await pool.query(
-      'SELECT jenis_project, target_revenue, target_project FROM performance_targets WHERE tahun = ?',
+      'SELECT jenis_project, target_project, harga_per_project FROM performance_targets WHERE tahun = ?',
       [parsedTahun]
     );
     const targetMap = {};
@@ -161,11 +142,17 @@ router.get('/realizations', verifyToken, async (req, res) => {
     for (const r of realRows) realMap[r.jenis_project] = r;
 
     // Merge with VALID_JENIS — always 5 elements
-    const targets = VALID_JENIS.map((jenis) => ({
-      jenis_project: jenis,
-      target_revenue: targetMap[jenis] ? parseFloat(targetMap[jenis].target_revenue) || 0 : 0,
-      target_project: targetMap[jenis] ? parseInt(targetMap[jenis].target_project, 10) || 0 : 0
-    }));
+    const targets = VALID_JENIS.map((jenis) => {
+      const t = targetMap[jenis];
+      const tp = t ? parseInt(t.target_project, 10) || 0 : 0;
+      const hpp = t ? parseFloat(t.harga_per_project) || 0 : 0;
+      return {
+        jenis_project: jenis,
+        target_project: tp,
+        harga_per_project: hpp,
+        target_revenue: tp * hpp  // rupiah penuh, computed
+      };
+    });
     const realizations = VALID_JENIS.map((jenis) => ({
       jenis_project: jenis,
       total_revenue: realMap[jenis] ? parseFloat(realMap[jenis].total_revenue) || 0 : 0,
@@ -278,6 +265,34 @@ router.delete('/realizations/:id', verifyToken, requireRole(['Superadmin']), asy
   } catch (err) {
     console.error('Delete realization error:', err);
     res.status(500).json({ message: 'Gagal menghapus data realisasi.' });
+  }
+});
+
+// GET /api/performance/public-summary?tahun=YYYY
+// Public endpoint — no auth required — for ERP Dashboard cross-origin fetch
+router.get('/public-summary', async (req, res) => {
+  const tahun = parseInt(req.query.tahun, 10) || new Date().getFullYear();
+
+  try {
+    const [targetRows] = await pool.query(
+      'SELECT jenis_project, target_project, harga_per_project FROM performance_targets WHERE tahun = ?',
+      [tahun]
+    );
+    const [realRows] = await pool.query(
+      `SELECT jenis_project, SUM(nilai_revenue) AS total_revenue, COUNT(*) AS total_project
+       FROM performance_realizations WHERE tahun = ? GROUP BY jenis_project`,
+      [tahun]
+    );
+
+    const revenueTarget   = targetRows.reduce((s, t) => s + (parseInt(t.target_project, 10) || 0) * (parseFloat(t.harga_per_project) || 0), 0);
+    const projectTarget   = targetRows.reduce((s, t) => s + (parseInt(t.target_project, 10) || 0), 0);
+    const revenueRealisasi = realRows.reduce((s, r) => s + (parseFloat(r.total_revenue) || 0), 0);
+    const projectRealisasi = realRows.reduce((s, r) => s + (parseInt(r.total_project, 10) || 0), 0);
+
+    res.json({ tahun, revenueTarget, projectTarget, revenueRealisasi, projectRealisasi });
+  } catch (err) {
+    console.error('Public summary error:', err);
+    res.status(500).json({ message: 'Gagal mengambil data.' });
   }
 });
 

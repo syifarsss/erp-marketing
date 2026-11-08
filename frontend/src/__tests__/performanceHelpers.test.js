@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import {
   formatRevenue,
-  convertTargetToRupiah,
+  convertJutaToRupiah,
+  calcTargetRevenue,
   calcPersen,
   calcSisa,
   getStatusLabel
@@ -10,11 +11,35 @@ import {
 
 // ─── Property-Based Tests ────────────────────────────────────────────────────
 
-describe('Property 1: convertTargetToRupiah — unit conversion', () => {
-  it('always equals x * 1_000_000_000 for all x >= 0', () => {
+describe('Property 1: calcTargetRevenue — formula target_project × harga_per_project', () => {
+  it('returns target_project × harga_per_project for all non-zero tp', () => {
     fc.assert(
-      fc.property(fc.double({ min: 0, max: 999.999, noNaN: true }), (x) => {
-        expect(convertTargetToRupiah(x)).toBeCloseTo(x * 1_000_000_000, 0);
+      fc.property(
+        fc.integer({ min: 1, max: 10000 }),
+        fc.double({ min: 0, max: 1e12, noNaN: true }),
+        (tp, hpp) => {
+          expect(calcTargetRevenue(tp, hpp)).toBeCloseTo(tp * hpp, 0);
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+
+  it('returns 0 when target_project is 0', () => {
+    fc.assert(
+      fc.property(fc.double({ min: 0, max: 1e12, noNaN: true }), (hpp) => {
+        expect(calcTargetRevenue(0, hpp)).toBe(0);
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+describe('Property 1b: convertJutaToRupiah — unit conversion', () => {
+  it('always equals juta * 1_000_000 for all juta >= 0', () => {
+    fc.assert(
+      fc.property(fc.double({ min: 0, max: 999999, noNaN: true }), (juta) => {
+        expect(convertJutaToRupiah(juta)).toBeCloseTo(juta * 1_000_000, 0);
       }),
       { numRuns: 100 }
     );
@@ -139,4 +164,16 @@ describe('getStatusLabel — example cases', () => {
   it('50 → Perlu dorong', () => expect(getStatusLabel(50).text).toBe('Perlu dorong'));
   it('49.9 → Tertinggal', () => expect(getStatusLabel(49.9).text).toBe('Tertinggal'));
   it('0 → Tertinggal', () => expect(getStatusLabel(0).text).toBe('Tertinggal'));
+});
+
+describe('calcTargetRevenue — example cases', () => {
+  it('returns 0 when target_project is 0', () => expect(calcTargetRevenue(0, 5_000_000_000)).toBe(0));
+  it('returns tp × hpp', () => expect(calcTargetRevenue(4, 2_500_000_000)).toBe(10_000_000_000));
+  it('returns 0 when harga is 0', () => expect(calcTargetRevenue(5, 0)).toBe(0));
+});
+
+describe('convertJutaToRupiah — example cases', () => {
+  it('converts 1 juta → 1_000_000', () => expect(convertJutaToRupiah(1)).toBe(1_000_000));
+  it('converts 2500 juta → 2_500_000_000', () => expect(convertJutaToRupiah(2500)).toBe(2_500_000_000));
+  it('converts 0 → 0', () => expect(convertJutaToRupiah(0)).toBe(0));
 });

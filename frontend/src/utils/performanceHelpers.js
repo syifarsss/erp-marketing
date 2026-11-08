@@ -17,12 +17,26 @@ export const formatRevenue = (value) => {
 };
 
 /**
- * Convert target_revenue stored in miliar rupiah to rupiah penuh.
- * @param {number|string} miliar
+ * Convert harga_per_project input (in juta rupiah) to rupiah penuh.
+ * @param {number|string} juta
  * @returns {number}
  */
-export const convertTargetToRupiah = (miliar) => {
-  return (parseFloat(miliar) || 0) * 1_000_000_000;
+export const convertJutaToRupiah = (juta) => {
+  return (parseFloat(juta) || 0) * 1_000_000;
+};
+
+/**
+ * Calculate target_revenue = target_project × harga_per_project (both in rupiah penuh).
+ * Returns 0 if target_project is 0.
+ * @param {number} targetProject
+ * @param {number} hargaPerProject  - in rupiah penuh
+ * @returns {number}
+ */
+export const calcTargetRevenue = (targetProject, hargaPerProject) => {
+  const tp = parseInt(targetProject, 10) || 0;
+  const hpp = parseFloat(hargaPerProject) || 0;
+  if (tp === 0) return 0;
+  return tp * hpp;
 };
 
 /**

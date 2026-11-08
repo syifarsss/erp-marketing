@@ -8,9 +8,28 @@ router.get('/', verifyToken, async (req, res) => {
   try {
     // 1. KPI Summaries
     const [activeLeads] = await pool.query("SELECT COUNT(*) as count FROM Prospect WHERE UPPER(status) IN ('LEAD', 'PROPOSAL', 'HOLD')");
-    const [totalWon] = await pool.query("SELECT COUNT(*) as count, 0 as value FROM Prospect WHERE UPPER(status) IN ('WON', 'DONE')");
-    const [totalLoss] = await pool.query("SELECT COUNT(*) as count, 0 as value FROM Prospect WHERE UPPER(status) IN ('LOSS', 'REAL_LOSS')");
-    const [revenueWon] = await pool.query("SELECT 0 as sum");
+    const [totalWon] = await pool.query(`
+  SELECT 
+    COUNT(*) as count,
+    COALESCE(SUM(COALESCE(p.nilai_revenue, cls.value, 0)), 0) as value
+  FROM Prospect p
+  LEFT JOIN clients cls ON p.client_name = cls.company
+  WHERE UPPER(p.status) IN ('WON', 'DONE')
+`);
+    const [totalLoss] = await pool.query(`
+  SELECT 
+    COUNT(*) as count,
+    COALESCE(SUM(COALESCE(p.nilai_revenue, cls.value, 0)), 0) as value
+  FROM Prospect p
+  LEFT JOIN clients cls ON p.client_name = cls.company
+  WHERE UPPER(p.status) IN ('LOSS', 'REAL_LOSS')
+`);
+    const [revenueWon] = await pool.query(`
+  SELECT COALESCE(SUM(COALESCE(p.nilai_revenue, cls.value, 0)), 0) as sum
+  FROM Prospect p
+  LEFT JOIN clients cls ON p.client_name = cls.company
+  WHERE UPPER(p.status) IN ('WON', 'DONE')
+`);
 
     // 2. Stage Distribution (Pie Chart)
     const [stageRows] = await pool.query("SELECT status, COUNT(*) as count FROM Prospect GROUP BY status");

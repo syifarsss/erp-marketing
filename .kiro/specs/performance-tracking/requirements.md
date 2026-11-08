@@ -63,9 +63,9 @@ Fitur ini tidak mencakup grafik per bulan, ringkasan dashboard, atau ekspor lapo
 
 #### Kriteria Penerimaan
 
-1. THE Performance_System SHALL menyimpan setiap target dengan kolom: `id` (integer auto increment), `tahun` (integer), `jenis_project` (varchar), `target_revenue` (decimal, satuan **miliar rupiah** — contoh: nilai 2,5 berarti Rp 2.500.000.000), `target_project` (integer ≥ 0).
+1. THE Performance_System SHALL menyimpan setiap target dengan kolom: `id` (integer auto increment), `tahun` (integer), `jenis_project` (varchar), `harga_per_project` (DECIMAL(20,2), rupiah penuh, ≥ 0), `target_project` (integer ≥ 0). Kolom `target_revenue` tidak disimpan di database; nilai target revenue dihitung saat dibaca sebagai `target_project × harga_per_project` (rupiah penuh).
 2. THE Performance_System SHALL memberlakukan batasan UNIQUE pada kombinasi kolom `tahun` dan `jenis_project` di tabel `performance_targets`.
-3. IF nilai `target_revenue` atau `target_project` yang dikirim ke backend adalah negatif, THEN THE Performance_System SHALL menolak permintaan dengan status 400 dan pesan kesalahan yang menjelaskan kolom yang tidak valid.
+3. IF nilai `harga_per_project` atau `target_project` yang dikirim ke backend adalah negatif, THEN THE Performance_System SHALL menolak permintaan dengan status 400 dan pesan kesalahan yang menjelaskan kolom yang tidak valid.
 4. WHEN menyimpan target untuk kombinasi tahun dan jenis_project yang sudah ada, THE Performance_System SHALL memperbarui baris yang ada (UPSERT), bukan menyisipkan baris duplikat.
 
 ---
@@ -131,15 +131,16 @@ Fitur ini tidak mencakup grafik per bulan, ringkasan dashboard, atau ekspor lapo
 1. WHEN halaman Target dimuat, THE Performance_System SHALL menampilkan selektor tahun di sisi kanan atas halaman dengan nilai default tahun berjalan.
 2. WHEN pengguna memilih tahun berbeda pada selektor, THE Performance_System SHALL memuat data target untuk tahun yang dipilih dari backend.
 3. WHEN backend mengembalikan tidak ada data untuk tahun yang dipilih, THE Performance_System SHALL menampilkan semua field dengan nilai default 0.
-4. THE Performance_System SHALL menampilkan dua kartu berdampingan: "Target Revenue" dan "Target Project".
-5. THE Performance_System SHALL menampilkan satu baris per jenis project (CFD, FEA, Engineering Package, Process Simulation, Other) di dalam setiap kartu; field input pada kartu Target Revenue berupa angka desimal tidak negatif dengan nilai maksimal 999.999 (satuan miliar rupiah), dan field input pada kartu Target Project berupa bilangan bulat tidak negatif dengan nilai maksimal 9.999.
-6. THE Performance_System SHALL menampilkan satuan "M" (miliar rupiah) di samping setiap field input pada kartu Target Revenue.
-7. WHEN pengguna mengubah nilai input pada kartu manapun, THE Performance_System SHALL memperbarui baris total di bagian bawah kartu tersebut secara otomatis.
-8. IF nilai yang dimasukkan pengguna pada field input adalah negatif atau bukan angka, THEN THE Performance_System SHALL menampilkan pesan kesalahan di samping field tersebut tanpa menunggu tombol Simpan ditekan, dan THE Performance_System SHALL menonaktifkan tombol "Simpan target" selama masih terdapat error validasi.
-9. WHEN Superadmin mengklik tombol "Simpan target", THE Performance_System SHALL mengirim seluruh data target untuk tahun yang dipilih ke backend untuk disimpan.
-10. WHEN penyimpanan target berhasil, THE Performance_System SHALL menampilkan notifikasi keberhasilan menggunakan mekanisme `showAlert` yang sudah ada.
-11. IF permintaan penyimpanan target gagal, THEN THE Performance_System SHALL menampilkan pesan kesalahan menggunakan mekanisme `showAlert` yang sudah ada.
-12. WHERE layar lebih sempit dari 768px, THE Performance_System SHALL menampilkan dua kartu dalam satu kolom vertikal.
+4. THE Performance_System SHALL menampilkan satu tabel dengan kolom: Jenis Project, Target Project, Harga per Project (Rp juta), Target Revenue (read-only hasil kali).
+5. THE Performance_System SHALL menampilkan field input `target_project` (bilangan bulat ≥ 0) dan field input `harga_per_project` dalam satuan Rp juta (desimal, boleh koma, ≥ 0) per baris jenis project.
+6. THE Performance_System SHALL menampilkan kolom Target Revenue sebagai hasil kali `target_project × harga_per_project × 1.000.000` dalam format 'X,X M', diperbarui otomatis saat input berubah, tidak dapat diedit langsung.
+7. THE Performance_System SHALL menyimpan `harga_per_project` sebagai rupiah penuh (nilai input × 1.000.000) ke backend.
+8. WHEN pengguna mengubah nilai input pada baris manapun, THE Performance_System SHALL memperbarui baris total di bagian bawah tabel tersebut secara otomatis.
+9. IF nilai yang dimasukkan pengguna pada field input adalah negatif atau bukan angka, THEN THE Performance_System SHALL menampilkan pesan kesalahan di samping field tersebut tanpa menunggu tombol Simpan ditekan, dan THE Performance_System SHALL menonaktifkan tombol "Simpan target" selama masih terdapat error validasi.
+10. WHEN Superadmin mengklik tombol "Simpan target", THE Performance_System SHALL mengirim seluruh data target untuk tahun yang dipilih ke backend untuk disimpan.
+11. WHEN penyimpanan target berhasil, THE Performance_System SHALL menampilkan notifikasi keberhasilan menggunakan mekanisme `showAlert` yang sudah ada.
+12. IF permintaan penyimpanan target gagal, THEN THE Performance_System SHALL menampilkan pesan kesalahan menggunakan mekanisme `showAlert` yang sudah ada.
+13. WHERE layar lebih sempit dari 768px, THE Performance_System SHALL menampilkan tabel dalam satu kolom vertikal.
 
 ---
 
@@ -222,8 +223,8 @@ Fitur ini tidak mencakup grafik per bulan, ringkasan dashboard, atau ekspor lapo
 
 #### Kriteria Penerimaan
 
-1. THE Performance_System SHALL menyediakan endpoint `GET /api/performance/targets?tahun=YYYY` yang mengembalikan seluruh target untuk tahun yang diminta.
-2. THE Performance_System SHALL menyediakan endpoint `POST /api/performance/targets` yang menerima array target (satu per jenis project) dan menyimpannya menggunakan UPSERT.
+1. THE Performance_System SHALL menyediakan endpoint `GET /api/performance/targets?tahun=YYYY` yang mengembalikan array 5 elemen, masing-masing berisi: `jenis_project`, `target_project`, `harga_per_project` (rupiah penuh), `target_revenue` (hasil hitung: target_project × harga_per_project, rupiah penuh).
+2. THE Performance_System SHALL menyediakan endpoint `POST /api/performance/targets` yang menerima array dengan field `target_project` dan `harga_per_project` (rupiah penuh) per jenis project, dan menyimpannya menggunakan UPSERT.
 3. IF request ke endpoint POST tidak menyertakan token autentikasi yang valid, THEN THE Performance_System SHALL menolak permintaan dengan status 401.
 4. IF request ke endpoint POST dikirim oleh pengguna dengan role selain Superadmin, THEN THE Performance_System SHALL menolak permintaan dengan status 403.
 
@@ -259,7 +260,8 @@ Fitur ini tidak mencakup grafik per bulan, ringkasan dashboard, atau ekspor lapo
 3. THE Performance_System SHALL menghitung Persen_Tercapai menggunakan rumus: (Realisasi / Target) × 100.
 4. THE Performance_System SHALL menghitung Sisa_Target menggunakan rumus: Target − Realisasi (nilai boleh negatif jika melampaui target).
 5. WHEN nilai Persen_Tercapai melebihi 100, THE Performance_System SHALL tetap menampilkan angka persen yang sebenarnya (misalnya "125,0%"), namun membatasi lebar bar progres di 100%.
-6. WHEN menghitung Persen_Tercapai dan Sisa_Target revenue, THE Performance_System SHALL mengkonversi `target_revenue` dari miliar rupiah ke rupiah penuh (dikalikan 1.000.000.000) sebelum dibandingkan dengan `nilai_revenue` realisasi yang tersimpan dalam rupiah penuh.
+6. WHEN menghitung Target Revenue per jenis project, THE Performance_System SHALL menggunakan rumus: `target_revenue = target_project × harga_per_project` (keduanya sudah dalam rupiah penuh). Tidak ada konversi miliar ke rupiah; konversi hanya terjadi saat input: `harga_per_project_rupiah = nilai_input_juta × 1.000.000`.
+7. IF `target_project` = 0 untuk suatu jenis project, THEN THE Performance_System SHALL menetapkan `target_revenue` = 0 untuk jenis tersebut (tidak membagi dengan nol).
 
 ---
 

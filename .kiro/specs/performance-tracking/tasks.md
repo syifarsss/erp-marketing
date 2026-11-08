@@ -8,6 +8,34 @@ Implementasi fitur Performance Tracking mencakup dua tabel database baru, satu f
 
 ## Tasks
 
+- [ ] 0. Revisi Skema — Ganti target_revenue dengan harga_per_project
+  - [ ] 0.1 Migrasi database: jalankan ALTER TABLE di `backend/config/db.js`
+    - Tambahkan kolom `harga_per_project DECIMAL(20,2) NOT NULL DEFAULT 0` ke `performance_targets`
+    - Migrasi data: UPDATE SET harga_per_project berdasarkan target_revenue dan target_project
+    - Hapus kolom `target_revenue` dari `performance_targets`
+    - Gunakan try/catch per step agar idempotent
+    - _Requirements: 2.1_
+
+  - [ ] 0.2 Update route GET dan POST /targets di `backend/routes/performance.js`
+    - GET: kembalikan harga_per_project dan target_revenue = target_project × harga_per_project
+    - POST: terima harga_per_project, bukan target_revenue
+    - _Requirements: 12.1, 12.2_
+
+  - [ ] 0.3 Update frontend state dan helper
+    - Ganti state targetForm: target_revenue → harga_per_project
+    - Hapus convertTargetToRupiah, tambah convertJutaToRupiah
+    - Update kalkulasi di halaman Realisasi dan dashboard: gunakan target_revenue dari API (sudah rupiah penuh)
+    - _Requirements: 6.6, 14.6_
+
+  - [ ] 0.4 Update UI halaman Target
+    - Satukan dua kartu menjadi satu tabel: Jenis Project | Target Project | Harga per Project (juta) | Target Revenue (read-only)
+    - _Requirements: 6.4, 6.5, 6.6_
+
+  - [ ] 0.5 Update property tests di performanceHelpers.test.js
+    - Ganti Property 1 (convertTargetToRupiah) dengan Property 1 (target_revenue formula) dan Property 1b (convertJutaToRupiah)
+    - Update performanceHelpers.js: hapus convertTargetToRupiah, tambah convertJutaToRupiah
+    - _Requirements: 14.6, 14.7_
+
 - [x] 1. Database — Buat tabel dan ALTER kolom baru
   - [x] 1.1 Tambahkan DDL tabel `performance_targets` dan `performance_realizations` ke `backend/config/schema.sql`
     - Tambahkan DDL `CREATE TABLE IF NOT EXISTS performance_targets` dengan kolom: `id`, `tahun`, `jenis_project`, `target_revenue` (DECIMAL, satuan miliar rupiah), `target_project`, `created_at`, `updated_at`, dan UNIQUE KEY `uq_tahun_jenis (tahun, jenis_project)`
@@ -225,17 +253,20 @@ Implementasi fitur Performance Tracking mencakup dua tabel database baru, satu f
 {
   "waves": [
     { "id": 0, "tasks": ["1.1", "1.2"] },
-    { "id": 1, "tasks": ["2.1", "3.1"] },
+    { "id": 1, "tasks": ["0.1", "2.1", "3.1"] },
     { "id": 2, "tasks": ["2.2", "2.3", "3.2"] },
     { "id": 3, "tasks": ["2.4", "4.1"] },
-    { "id": 4, "tasks": ["5.1"] },
+    { "id": 4, "tasks": ["0.2", "5.1"] },
     { "id": 5, "tasks": ["6.1", "6.2"] },
-    { "id": 6, "tasks": ["6.3", "7.1"] },
-    { "id": 7, "tasks": ["8.1", "9.1"] },
-    { "id": 8, "tasks": ["8.2", "9.2", "10.1", "11.1"] },
-    { "id": 9, "tasks": ["9.3"] },
-    { "id": 10, "tasks": ["12.1"] },
-    { "id": 11, "tasks": ["12.2", "12.3", "12.4", "12.5", "12.6", "12.7"] }
+    { "id": 6, "tasks": ["0.3"] },
+    { "id": 7, "tasks": ["6.3", "7.1"] },
+    { "id": 8, "tasks": ["8.1", "9.1"] },
+    { "id": 9, "tasks": ["8.2", "9.2", "10.1", "11.1"] },
+    { "id": 10, "tasks": ["0.4"] },
+    { "id": 11, "tasks": ["9.3"] },
+    { "id": 12, "tasks": ["12.1"] },
+    { "id": 13, "tasks": ["12.2", "12.3", "12.4", "12.5", "12.6", "12.7"] },
+    { "id": 14, "tasks": ["0.5"] }
   ]
 }
 ```

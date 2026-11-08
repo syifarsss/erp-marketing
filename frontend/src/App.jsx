@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import IntroAnimation from './IntroAnimation';
 import {
   LayoutDashboard, Users, Megaphone, Calendar, FolderHeart, FolderOpen, Folder,
@@ -174,7 +174,7 @@ export default function App() {
   const JENIS_PROJECT_LIST = ['CFD', 'FEA', 'Engineering Package', 'Process Simulation', 'Other'];
   const defaultTargetForm = () => JENIS_PROJECT_LIST.map(j => ({
     jenis_project: j,
-    target_revenue: '0',
+    harga_per_project: '0',   // input in juta, stored as rupiah penuh
     target_project: '0'
   }));
 
@@ -315,6 +315,15 @@ export default function App() {
     const interval = setInterval(() => {
       fetchDashboard();
     }, 6000);
+    return () => clearInterval(interval);
+  }, [currentView, token]);
+
+  // Performance Revenue — polling every 30s when on dashboard
+  useEffect(() => {
+    if (!token || currentView !== 'dashboard') return;
+    const interval = setInterval(() => {
+      fetchPerformanceRealizations(new Date().getFullYear());
+    }, 30000);
     return () => clearInterval(interval);
   }, [currentView, token]);
 
@@ -531,12 +540,13 @@ export default function App() {
       const data = await api.getPerformanceTargets(tahun);
       const merged = JENIS_PROJECT_LIST.map(j => {
         const found = Array.isArray(data) ? data.find(d => d.jenis_project === j) : null;
-        return found || { jenis_project: j, target_revenue: 0, target_project: 0 };
+        return found || { jenis_project: j, harga_per_project: 0, target_project: 0, target_revenue: 0 };
       });
       setPerformanceTargets(merged);
       setTargetForm(merged.map(t => ({
         jenis_project: t.jenis_project,
-        target_revenue: String(t.target_revenue),
+        // harga_per_project is stored in rupiah penuh; display in juta for input
+        harga_per_project: t.harga_per_project ? String(parseFloat(t.harga_per_project) / 1_000_000) : '0',
         target_project: String(t.target_project)
       })));
     } catch (err) {
@@ -569,7 +579,7 @@ export default function App() {
     setTargetForm(updated);
 
     const errors = { ...targetFormErrors };
-    const errorKey = `${updated[idx].jenis_project}_${field === 'target_revenue' ? 'revenue' : 'project'}`;
+    const errorKey = `${updated[idx].jenis_project}_${field === 'harga_per_project' ? 'harga' : 'project'}`;
     const num = parseFloat(value);
     if (value === '' || isNaN(num) || num < 0) {
       errors[errorKey] = 'Nilai tidak boleh negatif atau kosong.';
@@ -585,7 +595,7 @@ export default function App() {
     try {
       await api.savePerformanceTargets(targetYear, targetForm.map(r => ({
         jenis_project: r.jenis_project,
-        target_revenue: parseFloat(r.target_revenue) || 0,
+        harga_per_project: convertJutaToRupiah(r.harga_per_project), // convert juta → rupiah penuh
         target_project: parseInt(r.target_project, 10) || 0
       })));
       showAlert('Target berhasil disimpan.', 'Sukses', 'success');
@@ -922,9 +932,9 @@ export default function App() {
     return `Rp ${(num / 1_000_000_000).toFixed(1).replace('.', ',')} M`;
   };
 
-  // Convert target_revenue (stored in miliar) to rupiah penuh
-  const convertTargetToRupiah = (miliar) => {
-    return (parseFloat(miliar) || 0) * 1_000_000_000;
+  // Convert harga_per_project input (in juta) to rupiah penuh
+  const convertJutaToRupiah = (juta) => {
+    return (parseFloat(juta) || 0) * 1_000_000;
   };
 
   // Calc percentage achieved; returns null if target is 0
@@ -2420,8 +2430,7 @@ export default function App() {
                 const { targets, realizations } = performanceRealizations;
 
                 // Total revenue
-                const totalTargetMiliar = targets.reduce((s, t) => s + (parseFloat(t.target_revenue) || 0), 0);
-                const totalTargetRupiah = convertTargetToRupiah(totalTargetMiliar);
+                const totalTargetRupiah = targets.reduce((s, t) => s + (parseFloat(t.target_revenue) || 0), 0);
                 const totalRealRevenue = realizations.reduce((s, r) => s + (parseFloat(r.total_revenue) || 0), 0);
                 const persenRevenue = calcPersen(totalRealRevenue, totalTargetRupiah);
                 const sisaRevenue = calcSisa(totalTargetRupiah, totalRealRevenue);
@@ -5058,112 +5067,105 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Two cards side by side */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-
-                {/* Card: Target Revenue */}
-                <div className="glass-panel" style={{ padding: '20px' }}>
-                  <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <DollarSign size={18} style={{ color: 'var(--accent-cyan)' }} />
-                    Target Revenue
-                  </h3>
+              {/* Unified single table */}
+              <div className="glass-panel" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                  <Target size={18} style={{ color: 'var(--accent-cyan)' }} />
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700 }}>Target per Jenis Project</h3>
+                </div>
+                <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                     <thead>
-                      <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-                        <th style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--text-muted)', fontWeight: 600 }}>Jenis Project</th>
-                        <th style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--text-muted)', fontWeight: 600 }}>Target (M Rp)</th>
+                      <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+                        <th style={{ textAlign: 'left', padding: '8px 10px', color: 'var(--text-muted)', fontWeight: 600 }}>Jenis Project</th>
+                        <th style={{ textAlign: 'right', padding: '8px 10px', color: 'var(--text-muted)', fontWeight: 600 }}>Target Project</th>
+                        <th style={{ textAlign: 'right', padding: '8px 10px', color: 'var(--text-muted)', fontWeight: 600 }}>Harga per Project (juta)</th>
+                        <th style={{ textAlign: 'right', padding: '8px 10px', color: 'var(--text-muted)', fontWeight: 600 }}>Target Revenue</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {targetForm.map((row, idx) => (
-                        <tr key={row.jenis_project} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                          <td style={{ padding: '8px' }}>{row.jenis_project}</td>
-                          <td style={{ padding: '8px', textAlign: 'right' }}>
-                            {user?.role === 'Superadmin' ? (
-                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      {targetForm.map((row, idx) => {
+                        const tp = parseInt(row.target_project, 10) || 0;
+                        const hpp = parseFloat(row.harga_per_project) || 0;
+                        const targetRev = tp * hpp * 1_000_000; // convert juta to rupiah
+                        return (
+                          <tr key={row.jenis_project} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                            <td style={{ padding: '10px 10px', fontWeight: 600 }}>{row.jenis_project}</td>
+
+                            {/* Target Project input */}
+                            <td style={{ padding: '8px 10px', textAlign: 'right' }}>
+                              {user?.role === 'Superadmin' ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
                                   <input
                                     type="number"
                                     min="0"
-                                    step="0.01"
+                                    step="1"
                                     className="form-input"
-                                    style={{ width: '100px', textAlign: 'right', padding: '4px 8px', fontSize: '13px' }}
-                                    value={row.target_revenue}
-                                    onChange={e => updateTargetFormRow(idx, 'target_revenue', e.target.value)}
+                                    style={{ width: '80px', textAlign: 'right', padding: '4px 8px', fontSize: '13px' }}
+                                    value={row.target_project}
+                                    onChange={e => updateTargetFormRow(idx, 'target_project', e.target.value)}
                                   />
-                                  <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>M</span>
+                                  {targetFormErrors[`${row.jenis_project}_project`] && (
+                                    <span style={{ color: 'var(--accent-red)', fontSize: '11px' }}>
+                                      {targetFormErrors[`${row.jenis_project}_project`]}
+                                    </span>
+                                  )}
                                 </div>
-                                {targetFormErrors[`${row.jenis_project}_revenue`] && (
-                                  <span style={{ color: 'var(--accent-red)', fontSize: '11px' }}>
-                                    {targetFormErrors[`${row.jenis_project}_revenue`]}
-                                  </span>
-                                )}
-                              </div>
-                            ) : (
-                              <span>{parseFloat(row.target_revenue) || 0} M</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr style={{ borderTop: '2px solid var(--border-color)' }}>
-                        <td style={{ padding: '8px', fontWeight: 700 }}>Total</td>
-                        <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700 }}>
-                          {targetForm.reduce((s, r) => s + (parseFloat(r.target_revenue) || 0), 0).toFixed(2)} M
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
+                              ) : (
+                                <span>{tp}</span>
+                              )}
+                            </td>
 
-                {/* Card: Target Project */}
-                <div className="glass-panel" style={{ padding: '20px' }}>
-                  <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Award size={18} style={{ color: 'var(--accent-purple)' }} />
-                    Target Project
-                  </h3>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-                        <th style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--text-muted)', fontWeight: 600 }}>Jenis Project</th>
-                        <th style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--text-muted)', fontWeight: 600 }}>Target (project)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {targetForm.map((row, idx) => (
-                        <tr key={row.jenis_project} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                          <td style={{ padding: '8px' }}>{row.jenis_project}</td>
-                          <td style={{ padding: '8px', textAlign: 'right' }}>
-                            {user?.role === 'Superadmin' ? (
-                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="1"
-                                  className="form-input"
-                                  style={{ width: '80px', textAlign: 'right', padding: '4px 8px', fontSize: '13px' }}
-                                  value={row.target_project}
-                                  onChange={e => updateTargetFormRow(idx, 'target_project', e.target.value)}
-                                />
-                                {targetFormErrors[`${row.jenis_project}_project`] && (
-                                  <span style={{ color: 'var(--accent-red)', fontSize: '11px' }}>
-                                    {targetFormErrors[`${row.jenis_project}_project`]}
-                                  </span>
-                                )}
-                              </div>
-                            ) : (
-                              <span>{parseInt(row.target_project, 10) || 0}</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                            {/* Harga per Project input */}
+                            <td style={{ padding: '8px 10px', textAlign: 'right' }}>
+                              {user?.role === 'Superadmin' ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.1"
+                                      className="form-input"
+                                      style={{ width: '110px', textAlign: 'right', padding: '4px 8px', fontSize: '13px' }}
+                                      value={row.harga_per_project}
+                                      onChange={e => updateTargetFormRow(idx, 'harga_per_project', e.target.value)}
+                                    />
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '12px', whiteSpace: 'nowrap' }}>jt</span>
+                                  </div>
+                                  {targetFormErrors[`${row.jenis_project}_harga`] && (
+                                    <span style={{ color: 'var(--accent-red)', fontSize: '11px' }}>
+                                      {targetFormErrors[`${row.jenis_project}_harga`]}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span>{hpp} jt</span>
+                              )}
+                            </td>
+
+                            {/* Target Revenue — read-only, auto-calculated */}
+                            <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 600, color: 'var(--accent-cyan)' }}>
+                              {formatRevenue(targetRev)}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                     <tfoot>
-                      <tr style={{ borderTop: '2px solid var(--border-color)' }}>
-                        <td style={{ padding: '8px', fontWeight: 700 }}>Total</td>
-                        <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700 }}>
+                      <tr style={{ borderTop: '2px solid var(--border-color)', background: 'rgba(255,255,255,0.02)' }}>
+                        <td style={{ padding: '10px 10px', fontWeight: 700 }}>Total</td>
+                        <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 700 }}>
                           {targetForm.reduce((s, r) => s + (parseInt(r.target_project, 10) || 0), 0)} project
+                        </td>
+                        <td style={{ padding: '10px 10px', textAlign: 'right', color: 'var(--text-muted)', fontSize: '12px' }}>—</td>
+                        <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 700, color: 'var(--accent-cyan)' }}>
+                          {formatRevenue(
+                            targetForm.reduce((s, r) => {
+                              const tp = parseInt(r.target_project, 10) || 0;
+                              const hpp = parseFloat(r.harga_per_project) || 0;
+                              return s + (tp * hpp * 1_000_000);
+                            }, 0)
+                          )}
                         </td>
                       </tr>
                     </tfoot>
@@ -5180,14 +5182,14 @@ export default function App() {
               if (!performanceRealizations) return null;
               const { targets, realizations } = performanceRealizations;
               if (type === 'revenue') {
-                const totalTargetRupiah = targets.reduce((s, t) => s + convertTargetToRupiah(t.target_revenue), 0);
+                const totalTargetRupiah = targets.reduce((s, t) => s + (parseFloat(t.target_revenue) || 0), 0);
                 const totalReal = realizations.reduce((s, r) => s + (parseFloat(r.total_revenue) || 0), 0);
                 const persen = calcPersen(totalReal, totalTargetRupiah);
                 const sisa = calcSisa(totalTargetRupiah, totalReal);
                 const rows = JENIS_PROJECT_LIST.map(j => {
                   const t = targets.find(x => x.jenis_project === j);
                   const r = realizations.find(x => x.jenis_project === j);
-                  const tRupiah = convertTargetToRupiah(t?.target_revenue || 0);
+                  const tRupiah = parseFloat(t?.target_revenue || 0);
                   const rVal = parseFloat(r?.total_revenue || 0);
                   return { jenis: j, real: rVal, target: tRupiah, persen: calcPersen(rVal, tRupiah), sisa: calcSisa(tRupiah, rVal) };
                 });

@@ -203,6 +203,39 @@ async function initializeDatabase() {
       }
     }
 
+    // 3f. Migrate performance_targets: replace target_revenue with harga_per_project
+    // Step 1: Add harga_per_project column (skip if already exists)
+    try {
+      await conn.query(
+        'ALTER TABLE performance_targets ADD COLUMN harga_per_project DECIMAL(20,2) NOT NULL DEFAULT 0'
+      );
+    } catch (err) {
+      if (err.code !== 'ER_DUP_FIELDNAME') throw err;
+      // Column already exists — safe to ignore
+    }
+
+    // Step 2: Backfill harga_per_project from old target_revenue if target_revenue column still exists
+    try {
+      const [cols] = await conn.query(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'performance_targets' AND COLUMN_NAME = 'target_revenue'"
+      );
+      if (cols.length > 0) {
+        // Backfill: harga_per_project = (target_revenue * 1000000000) / target_project for rows where target_project > 0
+        await conn.query(`
+          UPDATE performance_targets
+          SET harga_per_project = CASE
+            WHEN target_project > 0 THEN (target_revenue * 1000000000 / target_project)
+            ELSE 0
+          END
+          WHERE harga_per_project = 0
+        `);
+        // Step 3: Drop the old target_revenue column
+        await conn.query('ALTER TABLE performance_targets DROP COLUMN target_revenue');
+      }
+    } catch (err) {
+      console.error('Migration 3f error (non-blocking):', err.message);
+    }
+
     // 4. Seed default data if User table is empty
     const [rows] = await conn.query('SELECT COUNT(*) as count FROM User');
     if (rows[0].count === 0) {

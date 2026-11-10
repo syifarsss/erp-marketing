@@ -2155,11 +2155,9 @@ export default function App() {
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-brand" style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
           <div
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', flexGrow: 1 }}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', flexGrow: 1, cursor: 'pointer' }}
             onClick={() => {
-              setCurrentView('dashboard');
-              setSelectedLeadId(null);
-              setSidebarOpen(false);
+              window.location.href = 'https://infimech-erp-client-583320051925.asia-southeast1.run.app';
             }}
           >
             <img src="/infimech-logo.png" alt="INFIMECH Logo" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
